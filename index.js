@@ -32,6 +32,11 @@ async function askQuestion(question) {
     } else {
         note(`Incorect!\n\nFEEDBACK:\n${question.feedback}`);
     }
+
+    const spin = spinner(); 
+    spin.start();
+    await sleep(3 * one_second_of_sleep);
+    spin.stop();
 }
 
 
@@ -245,7 +250,7 @@ async function main() {
             ],
             "In notarea CIDR, numarul de biti din adresa de retea este specificat prin /24, ceea ce inseamna ca primii 24 de biti ale adresei IP reprezinta adresa de retea, iar ultimii 8 biti reprezinta adresa host-ului."
         ),
-        new Question (
+        new Question(
             "Cine fragmenteaza pachetele in cadrul protocolului IPv4?",
             "Router-ul care trebuie sa transmita un pachet spre o retea cu MTU prea mic",
             [
@@ -254,166 +259,157 @@ async function main() {
                 "Destinatia"
             ],
             "In cadrul protocolului IPv4, pachetele sunt fragmentate de router-ul care trebuie sa transmita un pachet spre o retea cu MTU prea mic pentru dimensiunea pachetului IP respectiv. Astfel, router-ul va fragmenta pachetul in bucati mai mici care sa poata fi transmise prin reteaua respectiva."
+        ),
+        new Question(
+            "Cum este marcat ultimul fragment dintr-un pachet?",
+            "Flag-ul MF are valoarea 0",
+            [
+                "Flag-ul MF are valoarea 1",
+                "Flag-ul DF are valoarea 1",
+                "Offset-ul are valoarea 0"
+            ],
+            "Ultimul fragment dintr-un pachet este marcat prin faptul ca flag-ul MF (More Fragments) are valoarea 0, indicand ca nu mai sunt fragmente ulterioare."
+        ),
+        new Question(
+            "Ce reprezinta campul offset dintr-un fragment IP?",
+            "Pozitia fragmentului in pachet ca grup de 8 bytes",
+            [
+                "Pozitia fragmentului in pachet (numarul de bytes)",
+                "Nu are legatura cu fragmentarea",
+                "Pozitia fragmentului in pachet ca grup de 16 bytes"
+            ],
+            "Campul offset dintr-un fragment IP indica pozitia fragmentului in pachetul original, exprimata ca un numar de grupuri de 8 octeti (64 de biti)."
+        ),
+        new Question(
+            "In cadrul unui protocol cu fereastra glisanta, ce rol are cadrul de tip RR?",
+            "Receive Ready",
+            [
+                "Rank Reset",
+                "Response Resent",
+                "Reply Rejected",
+                "Reverse Run"
+            ],
+            "Cadrul de tip RR (Receive Ready) este folosit intr-un protocol cu fereastra glisanta pentru a confirma primirea cu succes a unui anumit numar de pachete. Acesta poate fi trimis de catre receptor catre emitator pentru a indica ca poate primi mai multe pachete."
+        ),
+        new Question(
+            "Daca la nivelul legatura de date se realizeaza transmisia transparenta prin caractere de control, care este caracterul folosit pentru escapare?",
+            "DLE",
+            ["ETX", "STX", "IDK"],
+            "DLE este caracterul folosit pentru escapare la nivelul legaturii de date in cazul transmisiei transparente prin caractere de control."
+        ),
+        new Question(
+            "Care nivel al stivei de protocoale ISO OSI se ocupa de determinarea rutei de la sursa la destinatie prin noduri intermediare?",
+            "Nivelul retea",
+            [
+                "Nivelul fizic",
+                "Nivelul legatura de date",
+                "Nivelul aplicatie"
+            ],
+            "Nivelul retea este cel care se ocupa de determinarea rutei de la sursa la destinatie prin intermediul nodurilor, prin utilizarea de protocoale de rutare si adresare."
+        ),
+        new Question(
+            "Pe ce se bazeaza protocolul RIP?",
+            "Distance vector",
+            ["Link state", "Nici una din cele mentionate"],
+            "Check this link: https://www.geeksforgeeks.org/routing-information-protocol-rip/"
+        ),
+        new Question(
+            "Cum se foloseste protocolul ICMP pentru a afla Path MTU?",
+            "Se trimit pachete ICMP din ce in ce mai mici pana cand nu se mai primeste o eroare",
+            [
+                "Se trimit pachete ICMP din ce in ce mai mari pana cand se primeste o eroare",
+                "Path MTU nu are nici o legatura cu protocolul ICMP"
+            ],
+            "Pentru a afla Path MTU, se trimit pachete ICMP cu flag-ul 'Don't Fragment' setat si cu o dimensiune tot mai mare. In cazul in care unul dintre pachete nu poate fi transmis din cauza dimensiunii prea mari, reteaua va returna un mesaj ICMP 'Fragmentation Needed and Don't Fragment was Set'. Acest mesaj va indica dimensiunea maxima a pachetelor care pot fi transmise pe acea ruta."
+        ),
+        new Question(
+            "Un protocol Stop and Wait are nevoie neaparat de un canal de transmisie Full Duplex?",
+            "Nu. Este suficient un canal Half Duplex",
+            ["Da", "Nu. Este suficient un canal Simplex"],
+            ""
+        ),
+        new Question(
+            "Daca folosim un nr de secventa pe 4 biti, care este dimensiunea maxima a unei ferestre glisante pentru un transmitator?",
+            "15",
+            ["12", "16", "8"],
+            "https://gateoverflow.in/111757/calculate-the-maximum-window-size"
+        ),
+        new Question(
+            "La nivelul legatura de date, pentru un protocol cu fereastra glisanta, cand se shifteaza fereastra transmitatorului?",
+            "Cand a primit ACK pentru primul cadru din fereastra de transmisie",
+            [
+                "Dupa ce a terminat de trimis cadrele din fereastra",
+                "Cand a primit ACK pentru oricare cadru din fereastra de transmisie"
+            ],
+            "Intr-un protocol cu fereastra glisanta, transmiterea datelor se face prin transmiterea unui numar fix de cadre (fereastra de transmisie) inainte de asteptarea confirmarii primirii acestora de catre receptor. Dupa ce primul cadru din fereastra de transmisie este trimis, transmitatorul asteapta sa primeasca un ACK (acuzatie de primire) pentru acest cadru inainte de a deplasa fereastra de transmisie catre urmatoarele cadre. In acest fel, transmitatorul poate asigura ca receptorul a primit primul cadru si poate accepta noile cadre din fereastra de transmisie pentru transmitere. Dupa primirea ACK-ului pentru primul cadru, fereastra de transmisie se deplaseaza cu un cadru si procesul se repeta pana cand toate cadrele din fereastra de transmisie au fost trimise si confirmate de receptor."
+        ),
+        new Question(
+            "Cand se reasambleaza fragmentele unui pachet IP?",
+            "La destinatia finala",
+            [
+                "La intrarea in prima retea cu un MTU suficient de mare",
+                "Dupa traversarea unui numar fix de retele"
+            ],
+            ""
+        ),
+        new Question(
+            "Ce garanteaza transmisia datelor folosind datagrame?",
+            "Nici una din aceste variante",
+            [
+                "Ordinea pachetelor ajunse la destinatie este aceeasi ordine in care au fost transmise",
+                "Canal de comunicatie prin care datele sigur ajung la destinatie",
+                "Corectitudinea datelor trimise"
+            ],
+            ""
+        ),
+        new Question(
+            "Intre metodele de retransmisie 'Go back N' si 'Selective repeat' care are nevoie sa pastreze intr-un buffer cadrele primite corect la receptor, pana se primesc si cadrele retransmise.",
+            ["Selective repeat"],
+            ["Nici unul", "Amandoua", "Go back N"],
+            ""
+        ),
+        new Question(
+            "Cum influenteaza fragmentarea pachetelor daca este setat flagul DF din header-ul IPv4?",
+            "Pachetul nu se va fragmenta niciodata",
+            [
+                "Pachetul trebuie neaparat sa fie fragmentat",
+                "Nu are legatura cu fragmentarea"
+            ],
+            ""
+        ),
+        new Question(
+            "Ce se intampla la protocolul Ethernet daca 2 host-uri incearca sa trimita in acelasi timp?",
+            "Are loc o coliziune si host-urile vor incerca sa retrimita dupa un timp",
+            [
+                "Datele ajung corect la destinatie.",
+                "Se trimite un NACK pentru unul din transmitatori."
+            ],
+            ""
+        ),
+        new Question(
+            "La nivelul legatura de date, daca vrem sa trimitem un payload de 16 biti, de cati biti de control avem nevoie pentru metoda Hamming?",
+            "5",
+            ["3", "4", "6"],
+            "Pentru a utiliza metoda Hamming pentru a trimite un payload de 16 biti, avem nevoie de 5 biti de control. Aceasta se datoreaza faptului ca metoda Hamming utilizeaza o matrice de control cu 5 linii si 16 coloane pentru a verifica si a corecta erorile de transmisie. Deci, raspunsul corect este 5."
+        ),
+        new Question(
+            "Prin folosirea unui checksum este posibila:",
+            "Detectia erorilor de transmisie",
+            [
+                "Fixarea lungimii maxime a unui cadru.",
+                "Detectia si corectarea erorilor de transmisie"
+            ],
+            "Checksum este o metoda utilizata pentru detectarea erorilor de transmisie in cadrul unui set de date. Se calculeaza o suma de control (checksum) pentru datele transmise si se compara cu o suma de control primita de la receptor. Daca cele doua sunt diferite, se poate presupune ca au aparut erori de transmisie in datele transmise. Nu este posibila detectarea si corectarea erorilor de transmisie utilizand doar checksum. Pentru a corecta erorile de transmisie, este necesara utilizarea altor metode, cum ar fi codurile de corectie a erorilor. De asemenea, checksum nu fixeaza lungimea maxima a unui cadru."
         )
     ]
-    /* TODO: format the Q&As from below
-    
-    //   "27": {
-    //     "Cum este marcat ultimul fragment dintr-un pachet?",
-    //     ["Flag-ul MF are valoarea 0"],
-    //     [
-    //       "Flag-ul MF are valoarea 1",
-    //       "Flag-ul DF are valoarea 1",
-    //       "Offset-ul are valoarea 0"
-    //     ],
-    //      "Ultimul fragment dintr-un pachet este marcat prin faptul ca flag-ul MF (More Fragments) are valoarea 0, indicand ca nu mai sunt fragmente ulterioare."
-    //   },
-    //   "28": {
-    //     "Ce reprezinta campul offset dintr-un fragment IP?",
-    //     ["Pozitia fragmentului in pachet ca grup de 8 bytes"],
-    //     [
-    //       "Pozitia fragmentului in pachet (numarul de bytes)",
-    //       "Nu are legatura cu fragmentarea",
-    //       "Pozitia fragmentului in pachet ca grup de 16 bytes"
-    //     ],
-    //      "Campul offset dintr-un fragment IP indica pozitia fragmentului in pachetul original, exprimata ca un numar de grupuri de 8 octeti (64 de biti)."
-    //   },
-    //   "29": {
-    //     "In cadrul unui protocol cu fereastra glisanta, ce rol are cadrul de tip RR?",
-    //     ["Receive Ready"],
-    //     [
-    //       "Rank Reset",
-    //       "Response Resent",
-    //       "Reply Rejected",
-    //       "Reverse Run"
-    //     ],
-    //      "Cadrul de tip RR (Receive Ready) este folosit intr-un protocol cu fereastra glisanta pentru a confirma primirea cu succes a unui anumit numar de pachete. Acesta poate fi trimis de catre receptor catre emitator pentru a indica ca poate primi mai multe pachete."
-    //   },
-    //   "30": {
-    //     "Daca la nivelul legatura de date se realizeaza transmisia transparenta prin caractere de control, care este caracterul folosit pentru escapare?",
-    //     ["DLE"],
-    //     ["ETX", "STX", "IDK"],
-    //      "DLE este caracterul folosit pentru escapare la nivelul legaturii de date in cazul transmisiei transparente prin caractere de control."
-    //   },
-    //   "31": {
-    //     "Care nivel al stivei de protocoale ISO OSI se ocupa de determinarea rutei de la sursa la destinatie prin noduri intermediare?",
-    //     ["Nivelul retea"],
-    //     [
-    //       "Nivelul fizic",
-    //       "Nivelul legatura de date",
-    //       "Nivelul aplicatie"
-    //     ],
-    //      "Nivelul retea este cel care se ocupa de determinarea rutei de la sursa la destinatie prin intermediul nodurilor, prin utilizarea de protocoale de rutare si adresare."
-    //   },
-    //   "32": {
-    //     "Pe ce se bazeaza protocolul RIP?",
-    //     ["Distance vector"],
-    //     ["Link state", "Nici una din cele mentionate"],
-    //      ""
-    //   },
-    //   "33": {
-    //     "Cum se foloseste protocolul ICMP pentru a afla Path MTU?",
-    //     [
-    //       "Se trimit pachete ICMP din ce in ce mai mici pana cand nu se mai primeste o eroare"
-    //     ],
-    //     [
-    //       "Se trimit pachete ICMP din ce in ce mai mari pana cand se primeste o eroare",
-    //       "Path MTU nu are nici o legatura cu protocolul ICMP"
-    //     ],
-    //      "Pentru a afla Path MTU, se trimit pachete ICMP cu flag-ul 'Don't Fragment' setat si cu o dimensiune tot mai mare. In cazul in care unul dintre pachete nu poate fi transmis din cauza dimensiunii prea mari, reteaua va returna un mesaj ICMP 'Fragmentation Needed and Don't Fragment was Set'. Acest mesaj va indica dimensiunea maxima a pachetelor care pot fi transmise pe acea ruta."
-    //   },
-    //   "34": {
-    //     "Un protocol Stop and Wait are nevoie neaparat de un canal de transmisie Full Duplex?",
-    //     ["Nu. Este suficient un canal Half Duplex"],
-    //     ["Da", "Nu. Este suficient un canal Simplex"],
-    //      ""
-    //   },
-    //   "35": {
-    //     "Daca folosim un nr de secventa pe 4 biti, care este dimensiunea maxima a unei ferestre glisante pentru un transmitator?",
-    //     ["15"],
-    //     ["12", "16", "8"],
-    //      "https://gateoverflow.in/111757/calculate-the-maximum-window-size"
-    //   },
-    //   "36": {
-    //     "La nivelul legatura de date, pentru un protocol cu fereastra glisanta, cand se shifteaza fereastra transmitatorului?",
-    //     [
-    //       "Cand a primit ACK pentru primul cadru din fereastra de transmisie"
-    //     ],
-    //     [
-    //       "Dupa ce a terminat de trimis cadrele din fereastra",
-    //       "Cand a primit ACK pentru oricare cadru din fereastra de transmisie"
-    //     ],
-    //      "Intr-un protocol cu fereastra glisanta, transmiterea datelor se face prin transmiterea unui numar fix de cadre (fereastra de transmisie) inainte de asteptarea confirmarii primirii acestora de catre receptor. Dupa ce primul cadru din fereastra de transmisie este trimis, transmitatorul asteapta sa primeasca un ACK (acuzatie de primire) pentru acest cadru inainte de a deplasa fereastra de transmisie catre urmatoarele cadre. In acest fel, transmitatorul poate asigura ca receptorul a primit primul cadru si poate accepta noile cadre din fereastra de transmisie pentru transmitere. Dupa primirea ACK-ului pentru primul cadru, fereastra de transmisie se deplaseaza cu un cadru si procesul se repeta pana cand toate cadrele din fereastra de transmisie au fost trimise si confirmate de receptor."
-    //   },
-    //   "37": {
-    //     "Cand se reasambleaza fragmentele unui pachet IP?",
-    //     ["La destinatia finala"],
-    //     [
-    //       "La intrarea in prima retea cu un MTU suficient de mare",
-    //       "Dupa traversarea unui numar fix de retele"
-    //     ],
-    //      ""
-    //   },
-    //   "38": {
-    //     "Ce garanteaza transmisia datelor folosind datagrame?",
-    //     ["Nici una din aceste variante"],
-    //     [
-    //       "Ordinea pachetelor ajunse la destinatie este aceeasi ordine in care au fost transmise",
-    //       "Canal de comunicatie prin care datele sigur ajung la destinatie",
-    //       "Corectitudinea datelor trimise"
-    //     ],
-    //      ""
-    //   },
-    //   "39": {
-    //     "Intre metodele de retransmisie 'Go back N' si 'Selective repeat' care are nevoie sa pastreze intr-un buffer cadrele primite corect la receptor, pana se primesc si cadrele retransmise.",
-    //     ["Selective repeat"],
-    //     ["Nici unul", "Amandoua", "Go back N"],
-    //      ""
-    //   },
-    //   "40": {
-    //     "Cum influenteaza fragmentarea pachetelor daca este setat flagul DF din header-ul IPv4?",
-    //     ["Pachetul nu se va fragmenta niciodata"],
-    //     [
-    //       "Pachetul trebuie neaparat sa fie fragmentat",
-    //       "Nu are legatura cu fragmentarea"
-    //     ],
-    //      ""
-    //   },
-    //   "41": {
-    //     "Ce se intampla la protocolul Ethernet daca 2 host-uri incearca sa trimita in acelasi timp?",
-    //     [
-    //       "Are loc o coliziune si host-urile vor incerca sa retrimita dupa un timp"
-    //     ],
-    //     [
-    //       "Datele ajung corect la destinatie.",
-    //       "Se trimite un NACK pentru unul din transmitatori."
-    //     ],
-    //      ""
-    //   },
-    //   "42": {
-    //     "La nivelul legatura de date, daca vrem sa trimitem un payload de 16 biti, de cati biti de control avem nevoie pentru metoda Hamming?",
-    //     ["5"],
-    //     ["3", "4", "6"],
-    //      "Pentru a utiliza metoda Hamming pentru a trimite un payload de 16 biti, avem nevoie de 5 biti de control. Aceasta se datoreaza faptului ca metoda Hamming utilizeaza o matrice de control cu 5 linii si 16 coloane pentru a verifica si a corecta erorile de transmisie. Deci, raspunsul corect este 5."
-    //   },
-    //   "43": {
-    //     "Prin folosirea unui checksum este posibila:",
-    //     ["Detectia erorilor de transmisie"],
-    //     [
-    //       "Fixarea lungimii maxime a unui cadru.",
-    //       "Detectia si corectarea erorilor de transmisie"
-    //     ],
-    //      "Checksum este o metoda utilizata pentru detectarea erorilor de transmisie in cadrul unui set de date. Se calculeaza o suma de control (checksum) pentru datele transmise si se compara cu o suma de control primita de la receptor. Daca cele doua sunt diferite, se poate presupune ca au aparut erori de transmisie in datele transmise. Nu este posibila detectarea si corectarea erorilor de transmisie utilizand doar checksum. Pentru a corecta erorile de transmisie, este necesara utilizarea altor metode, cum ar fi codurile de corectie a erorilor. De asemenea, checksum nu fixeaza lungimea maxima a unui cadru."
-    //   }
-    
-    */
+
    
-	intro(`${color.bgMagenta(color.black(' Welcome. Let us find out how much of a CLI expert you REALLY are. '))}`);
+	intro(`${color.bgMagenta(color.black(" Welcome! Let's test your knowledge about Network Protocols! "))}`);
 
     const spin = spinner(); 
     
     spin.start();
-    // await sleep(5 * one_second_of_sleep);
+    await sleep(5 * one_second_of_sleep);
     spin.stop();
 
 
