@@ -80,21 +80,26 @@ async function askQuestion(question, numQuestions, statistics) {
         statistics.count_incorrect_questions += 1;
     }
 
-    const spin = spinner(); 
-    spin.start('Next');
-    // 'await' makes the functions run in the same order they are written in code
-    await sleep(1 * oneSecondOfSleep);
-    
-    if (isCancel(spin)) {
-        note(
-            `Process was interrupted.\n` + 
-            `Number of completed questions: ${statistics.question_idx}\n` +
-            `Number of correct questions: ${statistics.count_correct_questions}`
-        );
-        process.exit(0);
+
+    if (statistics.question_idx != numQuestions) {
+        const spin = spinner(); 
+        spin.start('Next ');
+        // 'await' makes the functions run in the same order they are written in code
+        await sleep(3 * oneSecondOfSleep);
+
+        if (isCancel(spin)) {
+            note(
+                `Process was interrupted.\n` + 
+                `Number of completed questions: ${statistics.question_idx}\n` +
+                `Number of correct questions: ${statistics.count_correct_questions}`
+            );
+            process.exit(0);
+        }
+        
+        spin.stop('Next');
     }
     
-    spin.stop('Next');
+
 }
 
 
@@ -811,11 +816,18 @@ async function main() {
 
 
 
-    const spin = spinner(); 
-    spin.start();
+    const spin = spinner();
+
+    spin.start('Generating Q&As for you ');
     // 'await' makes the functions run in the same order they are written in code
     await sleep(3 * oneSecondOfSleep);
-    spin.stop();
+    spin.stop('Generating Q&As for you');
+
+
+    spin.start('Shuffling your Q&As ');
+    // 'await' makes the functions run in the same order they are written in code
+    await sleep(3 * oneSecondOfSleep);
+    spin.stop('Shuffling your Q&As');
 
 
     
