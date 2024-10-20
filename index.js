@@ -1,11 +1,15 @@
 #!/usr/bin/env node
 
-import { intro, isCancel, note, outro, select, spinner, text } from '@clack/prompts';
+import { intro, isCancel, cancel, note, outro, select, spinner, text } from '@clack/prompts';
 import { setTimeout as sleep } from 'node:timers/promises';
 import color from 'picocolors';
 
 
-const one_second_of_sleep = 1000
+const one_second_of_sleep = 1000;
+
+const QAs_set_length = 20;
+
+
 
 class Question {
     constructor(questionText, rightAnswear, wrongAnswears, feedback) {
@@ -17,30 +21,79 @@ class Question {
 }
 
 
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        // Swap elements
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+function selectRandomQuestions(questions, numberOfSelections) {
+    // Using a copy to avoid modifying the original list
+    const shuffled = shuffleArray([...questions]);
+    return shuffled.slice(0, numberOfSelections);
+}
+
+
 
 async function askQuestion(question, statistics) {
     statistics.question_idx += 1;
 
 
-    const ans = [question.rightAnswear].concat(question.wrongAnswears);
+    const allAnswears = [question.rightAnswear].concat(question.wrongAnswears);
+    const shuffledAnswears = shuffleArray([...allAnswears])
+
     const userAnswear = await select({
         message: `${statistics.question_idx}) ${question.questionText}`,
-        options: ans.map(answer => ({ value: answer }))
+        options: shuffledAnswears.map(answer => ({ value: answer }))
     });
 
 
+    if (isCancel(userAnswear)) {
+        cancel('Process was interrupted!');
+        note(
+            `Number of completed questions: ${statistics.question_idx - 1}\n` +
+            `Number of correct questions: ${statistics.count_correct_questions}\n` + 
+            `Number of incorrect questions: ${statistics.count_incorrect_questions}`
+        );
+        process.exit(0);
+    }
 
 
     // string comparison
     if (userAnswear === question.rightAnswear) {
-        note('Corect!\n\n+ 10 pct')
+        note(
+            `Correct!\n\n` +
+            // displaying the floating number with exact 2 decimals
+            `+ ${(100 / QAs_set_length).toFixed(2)} pct`
+        );
+        statistics.count_correct_questions += 1;
     } else {
-        note(`Incorect!\n\nFEEDBACK:\n${question.feedback}`);
+        if (question.feedback === "") {
+            // No feedback
+            note('Incorrect!');
+        } else {
+            // THe question has a feedback
+            note(`Incorrect!\n\nFEEDBACK:\n${question.feedback}`);
+        }
+        statistics.count_incorrect_questions += 1;
     }
 
     const spin = spinner(); 
     spin.start();
-    await sleep(3 * one_second_of_sleep);
+    await sleep(1 * one_second_of_sleep);
+    
+    if (isCancel(spin)) {
+        note(
+            `Process was interrupted.\n` + 
+            `Number of completed questions: ${statistics.question_idx}\n` +
+            `Number of correct questions: ${statistics.count_correct_questions}`
+        );
+        process.exit(0);
+    }
+    
     spin.stop();
 }
 
@@ -60,7 +113,9 @@ function generateQuestions() {
                 "Directly to the destination with a known MAC address"
             ],
             // Explanation:
-            "The ARP request is sent by broadcast in the local network,\nso that all devices on the network receive it\nand can update their ARP tables with the correct MAC address for the IP address specified in the request."
+            "The ARP request is sent by broadcast in the local network,\n" + 
+            "so that all devices on the network receive it\n" +
+            "and can update their ARP tables with the correct MAC address for the IP address specified in the request."
         ),
         // Question 02
         new Question(
@@ -76,7 +131,9 @@ function generateQuestions() {
                 "Only full duplex"
             ],
             // Explanation:
-            "A half duplex or full duplex channel can be used for a Stop and Wait protocol. This protocol requires the receiver to acknowledge the receipt of each packet sent by the sender, so the sender and receiver must not transmit simultaneously."
+            "A half duplex or full duplex channel can be used for a Stop and Wait protocol.\n" +
+            "This protocol requires the receiver to acknowledge the receipt of each packet sent by the sender,\n" +
+            "so the sender and receiver must not transmit simultaneously."
         ),
         // Question 03
         new Question(
@@ -90,7 +147,10 @@ function generateQuestions() {
                 "Adding a field in the header with the frame size in bytes"
             ],
             // Explanation:
-            "STX and ETX characters or adding a field with the frame size in bytes are correct methods to determine the start and end of a frame at the data link layer. Inserting control characters inside the frame body to escape characters is not a correct method, as there can be ambiguity if the data in the frame body accidentally contains the same sequences as the control characters."
+            "STX and ETX characters or adding a field with the frame size in bytes\n" +
+            "are correct methods to determine the start and end of a frame at the data link layer.\n" +
+            "Inserting control characters inside the frame body to escape characters is not a correct method,\n" +
+            "as there can be ambiguity if the data in the frame body accidentally contains the same sequences as the control characters."
         ),
         // Question 04
         new Question(
@@ -105,7 +165,10 @@ function generateQuestions() {
                 "All IPv4 packets can be fragmented"
             ],
             // Explanation:
-            "To mark an IPv4 packet that cannot be fragmented, the DF (Don't Fragment) flag is used. It is set in the packet header and indicates that the packet cannot be fragmented during transit. If an intermediate network cannot forward the packet without fragmenting it, the packet will be dropped, and an ICMP (Internet Control Message Protocol) message of type 'Destination Unreachable - Fragmentation Needed and Don't Fragment Bit Set' will be sent."
+            "To mark an IPv4 packet that cannot be fragmented, the DF (Don't Fragment) flag is used.\n" +
+            "It is set in the packet header and indicates that the packet cannot be fragmented during transit.\n" +
+            "If an intermediate network cannot forward the packet without fragmenting it, the packet will be dropped,\n" +
+            "and an ICMP (Internet Control Message Protocol) message of type 'Destination Unreachable - Fragmentation Needed and Don't Fragment Bit Set' will be sent."
         ),
         // Question 05
         new Question(
@@ -116,7 +179,11 @@ function generateQuestions() {
             // List of incorrect questions:
             ["traceroute", "path MTU discovery", "ping"],
             // Explanation:
-            "The ICMP (Internet Control Message Protocol) can be used for various diagnostic tasks in networks, such as ping, traceroute, or path MTU discovery. However, ICMP cannot be used to resolve MAC addresses to IP addresses, which means it cannot be used for ARP (Address Resolution Protocol). To resolve MAC addresses, a protocol like ARP or NDP (Neighbor Discovery Protocol) for IPv6 is needed."
+            "The ICMP (Internet Control Message Protocol) can be used for various diagnostic tasks in networks,\n" +
+            "such as ping, traceroute, or path MTU discovery.\n" +
+            "However, ICMP cannot be used to resolve MAC addresses to IP addresses,\n" +
+            "which means it cannot be used for ARP (Address Resolution Protocol).\n" +
+            "To resolve MAC addresses, a protocol like ARP or NDP (Neighbor Discovery Protocol) for IPv6 is needed."
         ),
         // Question 06
         new Question(
@@ -127,7 +194,9 @@ function generateQuestions() {
             // List of incorrect questions:
             ["Yes"],
             // Explanation:
-            "The IP (Internet Protocol) does not guarantee the correct delivery of packets to the destination. It is an unreliable delivery protocol, meaning there are no guarantees that a packet will reach its destination or that it will arrive in the correct order. Instead, IP relies on other protocols, such as TCP or UDP, to provide reliable transport services with flow and error control."
+            "The IP (Internet Protocol) does not guarantee the correct delivery of packets to the destination.\n" +
+            "It is an unreliable delivery protocol, meaning there are no guarantees that a packet will reach its destination or that it will arrive in the correct order.\n" +
+            "Instead, IP relies on other protocols, such as TCP or UDP, to provide reliable transport services with flow and error control."
         ),
         // Question 07
         new Question(
@@ -138,7 +207,11 @@ function generateQuestions() {
             // List of incorrect questions:
             ["Selective repeat", "Both options"],
             // Explanation:
-            "The Go Back n retransmission method ensures that the receiver gets the correct frames in order. This method requires the receiver to acknowledge the received packets with an ACK (Acknowledgement), and if a packet is lost or corrupted, all subsequent packets are ignored. In contrast, the Selective Repeat method allows the retransmission of individual lost or corrupted packets without affecting the others, but it does not guarantee that the packets will be received in order."
+            "The Go Back n retransmission method ensures that the receiver gets the correct frames in order.\n" +
+            "This method requires the receiver to acknowledge the received packets with an ACK (Acknowledgement),\n" +
+            "and if a packet is lost or corrupted, all subsequent packets are ignored.\n" +
+            "In contrast, the Selective Repeat method allows the retransmission of individual lost or corrupted packets without affecting the others,\n" +
+            "but it does not guarantee that the packets will be received in order."
         ),
         // Question 08
         new Question(
@@ -153,7 +226,8 @@ function generateQuestions() {
                 "It shifts the window and sends the next frames"
             ],
             // Explanation:
-            "In a sliding window protocol, the sender shifts the window to the right and sends the next frame only if it receives an ACK for the first frame in the window."
+            "In a sliding window protocol, the sender shifts the window to the right and sends the next frame\n" +
+            "only if it receives an ACK for the first frame in the window."
         ),
         // Question 09
         new Question(
@@ -180,7 +254,8 @@ function generateQuestions() {
                 "All prefix match"
             ],
             // Explanation:
-            "When there are multiple matches in the routing table for the destination address of a packet, the longest prefix match, also known as the longest prefix match, is used."
+            "When there are multiple matches in the routing table for the destination address of a packet,\n" +
+            "the LONGEST PREFIX MATCH is used."
         ),
         // Question 11
         new Question(
@@ -191,7 +266,9 @@ function generateQuestions() {
             // List of incorrect questions:
             ["Application layer", "Physical layer", "Network layer"],
             // Explanation:
-            "The data link layer (Layer 2) is responsible for managing the reliable transfer of data between two adjacent nodes on a communication network. This layer handles error correction and flow control on a communication channel."
+            "The data link layer (Layer 2) is responsible for managing the reliable transfer of data\n" + 
+            "between two adjacent nodes on a communication network.\n" +
+            "This layer handles error correction and flow control on a communication channel."
         ),
         // Question 12
         new Question(
@@ -206,7 +283,9 @@ function generateQuestions() {
                 "A PPPoE frame must be used"
             ],
             // Explanation:
-            "To send an IPv4 packet over an Ethernet network, it must be encapsulated in an Ethernet frame. In this case, the IPv4 packet will be placed in the payload of the Ethernet frame, and an Ethernet header will be added containing the MAC addresses of the source and destination devices."
+            "To send an IPv4 packet over an Ethernet network, it must be encapsulated in an Ethernet frame.\n" +
+            "In this case, the IPv4 packet will be placed in the payload of the Ethernet frame,\n" +
+            "and an Ethernet header will be added containing the MAC addresses of the source and destination devices."
         ),
         // Question 13
         new Question(
@@ -217,7 +296,8 @@ function generateQuestions() {
             // List of incorrect questions:
             ["SUM", "OR", "XOR"],
             // Explanation:
-            "To check if an IP address is in a particular network, the network mask is applied to the IP address using the AND operation. The result will be the network address corresponding to the given IP address, which will be looked up in the routing table."
+            "To check if an IP address is in a particular network, the network mask is applied to the IP address using the AND operation.\n" +
+            "The result will be the network address corresponding to the given IP address, which will be looked up in the routing table."
         ),
         // Question 14
         new Question(
@@ -228,7 +308,8 @@ function generateQuestions() {
             // List of incorrect questions:
             [ "Link state", "It is not possible to have a count-to-infinity" ],
             // Explanation:
-            "The count-to-infinity problem can occur in the Distance Vector routing algorithm. In this situation, two or more routers repeatedly exchange information about the cost of a route without reaching a routing solution."
+            "The count-to-infinity problem can occur in the Distance Vector routing algorithm.\n" +
+            "In this situation, two or more routers repeatedly exchange information about the cost of a route without reaching a routing solution."
         ),
         // Question 15
         new Question(
@@ -243,7 +324,9 @@ function generateQuestions() {
                 "One stub area and multiple backbone areas"
             ],
             // Explanation:
-            "Within an Autonomous System (AS), there can be one backbone area and multiple stub areas. The backbone area is responsible for routing traffic between stub areas, and the stub areas are connected to the backbone area and do not route traffic through them."
+            "Within an Autonomous System (AS), there can be one backbone area and multiple stub areas.\n" +
+            "The backbone area is responsible for routing traffic between stub areas,\n" +
+            "and the stub areas are connected to the backbone area and do not route traffic through them."
         ),
         // Question 16
         new Question(
@@ -271,7 +354,8 @@ function generateQuestions() {
                 "Datagrams"
             ],
             // Explanation:
-            "Virtual circuits ensure that packets arrive at the destination in the same order they were sent because packets are transmitted on the same fixed route in a certain order and are numbered accordingly."
+            "Virtual circuits ensure that packets arrive at the destination in the same order they were sent,\n" +
+            "because packets are transmitted on the same fixed route in a certain order and are numbered accordingly."
         ),
         // Question 18
         new Question(
@@ -285,7 +369,8 @@ function generateQuestions() {
                 "There is no division"
             ],
             // Explanation:
-            "The prefix of the IP address identifies the network address, while the suffix identifies the host address. The network address identifies a network, while the host address identifies a specific device within that network."
+            "The prefix of the IP address identifies the network address, while the suffix identifies the host address.\n" +
+            "The network address identifies a network, while the host address identifies a specific device within that network."
         ),
         // Question 19
         new Question(
@@ -300,7 +385,9 @@ function generateQuestions() {
                 "Error correction"
             ],
             // Explanation:
-            "A half-duplex channel allows data transfer in both directions, but not at the same time, since the transmission is alternated. For this reason, simultaneous data transfer in both directions is not possible through a half-duplex channel."
+            "A half-duplex channel allows data transfer in both directions,\n" +
+            "but not at the same time, since the transmission is alternated.\n" +
+            "For this reason, simultaneous data transfer in both directions is not possible through a half-duplex channel."
         ),
         // Question 20
         new Question(
@@ -314,7 +401,10 @@ function generateQuestions() {
                 "Go back n"
             ],
             // Explanation:
-            "Selective repeat is a sliding window retransmission method that ensures that a minimum number of duplicate frames are sent. This is achieved by the receiver holding the correctly received packets, and the sender retransmitting only the packets that have not been acknowledged."
+            "Selective repeat is a sliding window retransmission method\n" +
+            "that ensures that a minimum number of duplicate frames are sent.\n" +
+            "This is achieved by the receiver holding the correctly received packets,\n" +
+            "and the sender retransmitting only the packets that have not been acknowledged."
         ),
         // Question 21
         new Question(
@@ -329,7 +419,8 @@ function generateQuestions() {
                 "The destination"
             ],
             // Explanation:
-            "In the IPv6 protocol, packet fragmentation is performed by the data source, not by routers, when the packet is too large to be transmitted through a link with an MTU (Maximum Transmission Unit) smaller than the packet size."
+            "In the IPv6 protocol, packet fragmentation is performed by the data source, not by routers,\n" +
+            "when the packet is too large to be transmitted through a link with an MTU (Maximum Transmission Unit) smaller than the packet size."
         ),
         // Question 22
         new Question(
@@ -342,7 +433,10 @@ function generateQuestions() {
                 "1"
             ],
             // Explanation:
-            "To calculate the odd parity bit, count the number of bits with a value of 1 in the bit string, then add a bit with the value of 0 or 1 so that the total number of bits with a value of 1 is odd. In this case, there are 4 bits with a value of 1, so the odd parity bit must be 0, ensuring that the total number of bits with a value of 1 is odd (5)."
+            "To calculate the odd parity bit, count the number of bits with a value of 1 in the bit string,\n" +
+            "then add a bit with the value of 0 or 1 so that the total number of bits with a value of 1 is odd.\n" +
+            "In this case, there are 4 bits with a value of 1, so the odd parity bit must be 0,\n" +
+            "ensuring that the total number of bits with a value of 1 is odd (5)."
         ),
         // Question 23
         new Question(
@@ -357,7 +451,11 @@ function generateQuestions() {
                 "Cannot be sent"
             ],
             // Explanation:
-            "In transparent transmission using control characters, certain characters (such as the DLE character - Data Link Escape) are considered special and may be confused with control characters. To avoid this, a technique called 'byte stuffing' is used, where the special character is replaced with a character sequence that cannot be confused with control characters. In the case of the DLE character, the sequence DLE DLE is sent instead."
+            "In transparent transmission using control characters, certain characters\n" +
+            "(such as the DLE character - Data Link Escape) are considered special and may be confused with control characters.\n" +
+            "To avoid this, a technique called 'byte stuffing' is used, where the special character is replaced with\n" +
+            "a character sequence that cannot be confused with control characters.\n" +
+            "In the case of the DLE character, the sequence DLE DLE is sent instead."
         ),
         // Question 24
         new Question(
@@ -371,7 +469,9 @@ function generateQuestions() {
                 "The packet size is less than the MTU"
             ],
             // Explanation:
-            "IP packet fragmentation is necessary when the packet size is greater than the MTU (Maximum Transmission Unit) of an intermediate network through which the packet must pass, so the packet must be fragmented into smaller pieces that can be transmitted through that network."
+            "IP packet fragmentation is necessary when the packet size is greater than the MTU (Maximum Transmission Unit)\n" +
+            "of an intermediate network through which the packet must pass,\n" +
+            "so the packet must be fragmented into smaller pieces that can be transmitted through that network."
         ),
         // Question 25
         new Question(
@@ -386,7 +486,9 @@ function generateQuestions() {
                 "/24 marks the total number of bits in the IP address."
             ],
             // Explanation:
-            "In CIDR notation, the number of bits in the network address is specified by /24, meaning the first 24 bits of the IP address represent the network address, while the last 8 bits represent the host address."
+            "In CIDR notation, the number of bits in the network address is specified by '/24',\n" + 
+            "meaning the first 24 bits of the IP address represent the network address,\n" +
+            "while the last 8 bits represent the HOST address."
         ),
         // Question 26
         new Question(
@@ -401,7 +503,9 @@ function generateQuestions() {
                 "The destination"
             ],
             // Explanation:
-            "In the IPv4 protocol, packets are fragmented by the router that needs to send a packet to a network with a MTU that is too small for the size of the IP packet. Thus, the router will fragment the packet into smaller pieces that can be transmitted through that network."
+            "In the IPv4 protocol, packets are fragmented by the router that needs to send a packet\n" +
+            "to a network with a MTU that is too small for the size of the IP packet.\n" + 
+            "Thus, the router will fragment the packet into smaller pieces that can be transmitted through that network."
         ),
         // Question 27
         new Question(
@@ -416,7 +520,8 @@ function generateQuestions() {
                 "The offset has a value of 0"
             ],
             // Explanation:
-            "The last fragment of a packet is marked by the fact that the MF (More Fragments) flag has a value of 0, indicating that there are no more subsequent fragments."
+            "The last fragment of a packet is marked by the fact that the MF (More Fragments) flag has a value of 0,\n" +
+            "indicating that there are no more subsequent fragments."
         ),
         // Question 28
         new Question(
@@ -431,7 +536,8 @@ function generateQuestions() {
                 "The position of the fragment in the packet as a group of 16 bytes"
             ],
             // Explanation:
-            "The offset field in an IP fragment indicates the position of the fragment in the original packet, expressed as a number of groups of 8 octets (64 bits)."
+            "The offset field in an IP fragment indicates the position of the fragment in the original packet,\n"+
+            "expressed as a number of groups of 8 octets (64 bits)."
         ),
         // Question 29
         new Question(
@@ -447,7 +553,9 @@ function generateQuestions() {
                 "Reverse Run"
             ],
             // Explanation:
-            "The RR (Receive Ready) frame is used in a sliding window protocol to confirm the successful receipt of a certain number of packets. It can be sent by the receiver to the sender to indicate that it can receive more packets."
+            "The RR (Receive Ready) frame is used in a sliding window protocol\n" +
+            "to confirm the successful receipt of a certain number of packets.\n" +
+            "It can be sent by the receiver to the sender to indicate that it can receive more packets."
         ),
         // Question 30
         new Question(
@@ -473,7 +581,8 @@ function generateQuestions() {
                 "Application layer"
             ],
             // Explanation:
-            "The network layer is responsible for determining the route from source to destination through nodes, using routing and addressing protocols."
+            "The network layer is responsible for determining the route from source to destination\n" + 
+            "through nodes, using routing and addressing protocols."
         ),
         // Question 32
         new Question(
@@ -498,7 +607,10 @@ function generateQuestions() {
                 "Path MTU has nothing to do with the ICMP protocol"
             ],
             // Explanation:
-            "To find the Path MTU, ICMP packets are sent with the 'Don't Fragment' flag set and increasing size. If one of the packets cannot be transmitted due to being too large, the network will return an ICMP message 'Fragmentation Needed and Don't Fragment was Set'. This message will indicate the maximum size of packets that can be transmitted on that route."
+            "To find the Path MTU, ICMP packets are sent with the 'Don't Fragment' flag set and increasing size.\n" +
+            "If one of the packets cannot be transmitted due to being too large,\n" +
+            "the network will return an ICMP message 'Fragmentation Needed and Don't Fragment was Set'." +
+            "This message will indicate the maximum size of packets that can be transmitted on that route."
         ),
         // Question 34
         new Question(
@@ -534,7 +646,16 @@ function generateQuestions() {
                 "When it has received an ACK for any frame in the transmission window"
             ],
             // Explanation:
-            "In a sliding window protocol, data transmission is done by sending a fixed number of frames (the transmission window) before waiting for an acknowledgment of their receipt from the receiver. After the first frame in the transmission window is sent, the transmitter waits to receive an ACK (acknowledgment) for this frame before moving the transmission window to the next frames. This way, the transmitter can ensure that the receiver has received the first frame and can accept new frames from the transmission window for transmission. After receiving the ACK for the first frame, the transmission window shifts by one frame, and the process repeats until all frames in the transmission window have been sent and acknowledged by the receiver."
+            "In a sliding window protocol, data transmission is done by\n" + 
+            "sending a fixed number of frames (the transmission window)\n" +
+            "before waiting for an acknowledgment of their receipt from the receiver.\n" + 
+            "After the first frame in the transmission window is sent,\n" +
+            "the transmitter waits to receive an ACK (acknowledgment)\n" +
+            "for this frame before moving the transmission window to the next frames.\n" +
+            "This way, the transmitter can ensure that the receiver has received the first frame\n" +
+            "and can accept new frames from the transmission window for transmission.\n" +
+            "After receiving the ACK for the first frame, the transmission window shifts by one frame,\n" +
+            "and the process repeats until all frames in the transmission window have been sent and acknowledged by the receiver."
         ),
         // Question 37
         new Question(
@@ -613,7 +734,9 @@ function generateQuestions() {
             // List of incorrect answers:
             ["3", "4", "6"],
             // Explanation:
-            "To use the Hamming method to send a 16-bit payload, we need 5 control bits. This is because the Hamming method uses a control matrix with 5 rows and 16 columns to check and correct transmission errors. So, the correct answer is 5."
+            "To use the Hamming method to send a 16-bit payload, we need 5 control bits.\n" +
+            "This is because the Hamming method uses a control matrix with 5 rows and 16 columns to check and correct transmission errors.\n" +
+            "So, the correct answer is 5."
         ),
         // Question 43
         new Question(
@@ -627,44 +750,85 @@ function generateQuestions() {
                 "Detect and correct transmission errors"
             ],
             // Explanation:
-            "A checksum is a method used for detecting transmission errors within a set of data. A checksum is calculated for the transmitted data and compared with a checksum received from the receiver. If the two are different, it can be assumed that transmission errors have occurred in the transmitted data. It is not possible to detect and correct transmission errors using only a checksum. To correct transmission errors, other methods such as error correction codes are required. Additionally, a checksum does not set the maximum length of a frame."
+           "A checksum is a method used for detecting transmission errors within a set of data.\n" +
+           "A checksum is calculated for the transmitted data and compared with a checksum received from the receiver.\n" +
+           "If the two are different, it can be assumed that transmission errors have occurred in the transmitted data.\n" +
+           "It is not possible to detect and correct transmission errors using only a checksum.\n" +
+           "To correct transmission errors, other methods such as error correction codes are required.\n" +
+           "Additionally, a checksum does not set the maximum length of a frame."
         )
-
     ]
-
 }
+
+
+
+
 
 
 async function main() {
     // Removing all existing text from the terminal window
     console.clear();
 
+    /*
+    * By default, NodeJS accepts 10 listeners and if the program creates more,
+    * an error message regarding memory leaks will be generated
+    * 
+    * If such an error is displayed again, the value of MaxListeners must be increased.
+    */
+    process.setMaxListeners(50);
 
 
-   
-   
-	intro(`${color.bgYellowBright(color.black(" Welcome! Let's test your knowledge about Network Protocols! "))}`);
+    intro(`${color.bgYellowBright(color.black(" Welcome! Let's test your knowledge about Network Protocols! "))}`);
+
+
 
     const spin = spinner(); 
     
     spin.start();
-    await sleep(5 * one_second_of_sleep);
+    await sleep(3 * one_second_of_sleep);
     spin.stop();
 
     
-    const QAs = generateQuestions();
-
+    const all_QAs = generateQuestions();
+    const randomQAs = selectRandomQuestions(all_QAs, QAs_set_length)
 
     let statistics = {
         question_idx: 0,
         count_correct_questions: 0,
-        count_inocrrect_questions: 0
+        count_incorrect_questions: 0
     }
 
-    for (const question of QAs) {
+
+    for (const question of randomQAs) {
         // 'await' make the function in the same order they are written in code
         await askQuestion(question, statistics);
     }
+
+
+    const grade = statistics.count_correct_questions / QAs_set_length * 10
+
+    // ternary if-else
+    const final_message = (grade >= 5) ? 'Congrats! You PASSED!' : 'Ohh noo...You FAILED!'
+
+
+    note(
+        `Number of correct questions: ${statistics.count_correct_questions}\n` +
+        `Number of incorrect questions: ${statistics.count_incorrect_questions}\n` + 
+        `------------------------------------\n` +
+        // displaying the floating number with exact 2 decimals
+        `Your final grade: ${grade.toFixed(2)}`
+    );
+
+
+    if (grade < 5) {
+        outro(`${color.bgRed(color.black(`${final_message}`))}`);
+    } else {
+        outro(`${color.bgGreen(color.black(`${final_message}`))}`);
+    } 
+
+    process.exit(0);
+
 }
 
 main().catch(console.error);
+
