@@ -5,9 +5,8 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import color from 'picocolors';
 
 
-const one_second_of_sleep = 1000;
+const oneSecondOfSleep = 1000;
 
-const QAs_set_length = 20;
 
 
 
@@ -38,7 +37,7 @@ function selectRandomQuestions(questions, numberOfSelections) {
 
 
 
-async function askQuestion(question, statistics) {
+async function askQuestion(question, numQuestions, statistics) {
     statistics.question_idx += 1;
 
 
@@ -67,7 +66,7 @@ async function askQuestion(question, statistics) {
         note(
             `Correct!\n\n` +
             // displaying the floating number with exact 2 decimals
-            `+ ${(100 / QAs_set_length).toFixed(2)} pct`
+            `+ ${(100 / numQuestions).toFixed(2)} pct`
         );
         statistics.count_correct_questions += 1;
     } else {
@@ -83,7 +82,8 @@ async function askQuestion(question, statistics) {
 
     const spin = spinner(); 
     spin.start();
-    await sleep(1 * one_second_of_sleep);
+    // 'await' makes the functions run in the same order they are written in code
+    await sleep(1 * oneSecondOfSleep);
     
     if (isCancel(spin)) {
         note(
@@ -97,6 +97,28 @@ async function askQuestion(question, statistics) {
     spin.stop();
 }
 
+
+
+async function getNumOfQuestions() {
+    const numQuestions = await text({
+        message: "First of all... How many questions would you like to be asked? (1 - 43)",
+        placeholder: "",
+        initialValue: '',
+        validate(inputStr) {
+            const num = parseInt(inputStr, 10);
+
+            if (inputStr === '') return "Empty input!";
+            else if (!Number.isInteger(num) || inputStr.trim() !== num.toString()) return "The input must be a INTEGER!";
+            else if (num < 1 || num > 43) return "The input number must be in the range [1, 43]!";
+        },
+    });
+
+
+    if (isCancel(numQuestions)) {
+        cancel('Process was interrupted!');
+        process.exit(0);
+    }
+}
 
 
 function generateQuestions() {
@@ -778,19 +800,24 @@ async function main() {
     process.setMaxListeners(50);
 
 
+
     intro(`${color.bgYellowBright(color.black(" Welcome! Let's test your knowledge about Network Protocols! "))}`);
 
+
+    // 'await' makes the functions run in the same order they are written in code
+    const numQuestions = await getNumOfQuestions();
 
 
     const spin = spinner(); 
     
     spin.start();
-    await sleep(3 * one_second_of_sleep);
+    // 'await' makes the functions run in the same order they are written in code
+    await sleep(3 * oneSecondOfSleep);
     spin.stop();
 
     
-    const all_QAs = generateQuestions();
-    const randomQAs = selectRandomQuestions(all_QAs, QAs_set_length)
+    const allQAs = generateQuestions();
+    const randomQAs = selectRandomQuestions(allQAs, numQuestions)
 
     let statistics = {
         question_idx: 0,
@@ -800,12 +827,12 @@ async function main() {
 
 
     for (const question of randomQAs) {
-        // 'await' make the function in the same order they are written in code
-        await askQuestion(question, statistics);
+        // 'await' makes the functions run in the same order they are written in code
+        await askQuestion(question, numQuestions, statistics);
     }
 
 
-    const grade = statistics.count_correct_questions / QAs_set_length * 10
+    const grade = statistics.count_correct_questions / numQuestions * 10
 
     // ternary if-else
     const final_message = (grade >= 5) ? 'Congrats! You PASSED!' : 'Ohh noo...You FAILED!'
