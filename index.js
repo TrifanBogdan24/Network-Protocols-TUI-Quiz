@@ -64,7 +64,7 @@ async function askQuestion(question, numQuestions, statistics) {
     // string comparison
     if (userAnswear === question.rightAnswear) {
         note(
-            `Correct!\n\n` +
+            `${color.green('Correct!')}\n\n` +
             // displaying the floating number with exact 2 decimals
             `+ ${(100 / numQuestions).toFixed(2)} pct`
         );
@@ -72,10 +72,10 @@ async function askQuestion(question, numQuestions, statistics) {
     } else {
         if (question.feedback === "") {
             // No feedback
-            note('Incorrect!');
+            note(`${color.red('Incorrect!')}`);
         } else {
             // THe question has a feedback
-            note(`Incorrect!\n\nFEEDBACK:\n${question.feedback}`);
+            note(`${color.red('Incorrect!')}\n\nFEEDBACK:\n${question.feedback}`);
         }
         statistics.count_incorrect_questions += 1;
     }
@@ -841,18 +841,28 @@ async function main() {
     const final_message = (grade >= 5) ? 'Congrats! You PASSED!' : 'Ohh noo...You FAILED!'
 
 
-    note(
-        `Number of correct questions: ${statistics.count_correct_questions}\n` +
-        `Number of incorrect questions: ${statistics.count_incorrect_questions}\n` + 
-        `------------------------------------\n` +
-        // displaying the floating number with exact 2 decimals
-        `Your final grade: ${grade.toFixed(2)}`
-    );
+
 
 
     if (grade < 5) {
+        // Test FAILED
+        note(
+            `Number of correct questions: ${statistics.count_correct_questions}\n` +
+            `Number of incorrect questions: ${statistics.count_incorrect_questions}\n` + 
+            `------------------------------------\n` +
+            // displaying the floating number with exact 2 decimals
+            `Your final grade: ${color.red(grade.toFixed(2))}`
+        );
         outro(`${color.bgRed(color.black(`${final_message}`))}`);
     } else {
+        // Test PASSED
+        note(
+            `Number of correct questions: ${statistics.count_correct_questions}\n` +
+            `Number of incorrect questions: ${statistics.count_incorrect_questions}\n` + 
+            `------------------------------------\n` +
+            // displaying the floating number with exact 2 decimals
+            `Your final grade: ${color.green(grade.toFixed(2))}`
+        );
         outro(`${color.bgGreen(color.black(`${final_message}`))}`);
     } 
 
