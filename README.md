@@ -1,6 +1,6 @@
 # Network Protocols `TUI` Quiz
 
-> 👨‍💻 A `CLI TUI` tool written in JavaScript with Node.js,
+> 👨‍💻 A `CLI TUI` tool written in `JavaScript` with `NodeJS`,
 > leveraging the power of [`@clack/prompts`](https://github.com/bombshell-dev/clack.git)
 > to deliver an interactive quiz experience right in your terminal.
 
