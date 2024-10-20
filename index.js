@@ -81,7 +81,7 @@ async function askQuestion(question, numQuestions, statistics) {
     }
 
     const spin = spinner(); 
-    spin.start();
+    spin.start('Next');
     // 'await' makes the functions run in the same order they are written in code
     await sleep(1 * oneSecondOfSleep);
     
@@ -94,7 +94,7 @@ async function askQuestion(question, numQuestions, statistics) {
         process.exit(0);
     }
     
-    spin.stop();
+    spin.stop('Next');
 }
 
 
@@ -118,6 +118,8 @@ async function getNumOfQuestions() {
         cancel('Process was interrupted!');
         process.exit(0);
     }
+
+    return numQuestions
 }
 
 
@@ -808,12 +810,13 @@ async function main() {
     const numQuestions = await getNumOfQuestions();
 
 
+
     const spin = spinner(); 
-    
     spin.start();
     // 'await' makes the functions run in the same order they are written in code
     await sleep(3 * oneSecondOfSleep);
     spin.stop();
+
 
     
     const allQAs = generateQuestions();
