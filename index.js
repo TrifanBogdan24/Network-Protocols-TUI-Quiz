@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { intro, note, outro, select, spinner, text } from '@clack/prompts';
+import { intro, isCancel, note, outro, select, spinner, text } from '@clack/prompts';
 import { setTimeout as sleep } from 'node:timers/promises';
 import color from 'picocolors';
 
@@ -18,12 +18,17 @@ class Question {
 
 
 
-async function askQuestion(question) {
+async function askQuestion(question, statistics) {
+    statistics.question_idx += 1;
+
+
     const ans = [question.rightAnswear].concat(question.wrongAnswears);
     const userAnswear = await select({
-        message: question.questionText,
+        message: `${statistics.question_idx}) ${question.questionText}`,
         options: ans.map(answer => ({ value: answer }))
     });
+
+
 
 
     // string comparison
@@ -40,371 +45,605 @@ async function askQuestion(question) {
 }
 
 
-async function main() {
-    // Removing all existing text from the terminal window
-    console.clear();
 
-
-
-    const QAs = [
+function generateQuestions() {
+    return [
+        // Question 01
         new Question(
-            "Cum se transmite o cerere ARP?",
-            "Prin broadcast in reteaua locala",
+            // Question's text:
+            "How is an ARP request transmitted?",
+            // Correct answer:
+            "By broadcast in the local network",
+            // List of incorrect questions:
             [
-                "Direct spre destinatia cu adresa IP cunoscuta",
-                "Direct spre destinatia cu adresa MAC cunoscuta"
+                "Directly to the destination with a known IP address",
+                "Directly to the destination with a known MAC address"
             ],
-            "Cererea ARP este trimisa prin broadcast in reteaua locala,\nastfel incat toate dispozitivele din retea sa o primeasca\nsi sa poata actualiza tabelele lor ARP cu adresa MAC corespunzatoare pentru adresa IP specificata in cerere."
+            // Explanation:
+            "The ARP request is sent by broadcast in the local network,\nso that all devices on the network receive it\nand can update their ARP tables with the correct MAC address for the IP address specified in the request."
         ),
+        // Question 02
         new Question(
-            "Ce tip de canal poate fi folosit pentru un protocol Stop and wait?",
-            "Half duplex sau full duplex",
+            // Question's text:
+            "What type of channel can be used for a Stop and Wait protocol?",
+            // Correct answer:
+            "Half duplex or full duplex",
+            // List of incorrect questions:
             [
-            "Orice fel de canal de comunicatie",
-            "Simplex",
-            "Simplex sau half duplex",
-            "Doar full duplex"
+                "Any type of communication channel",
+                "Simplex",
+                "Simplex or half duplex",
+                "Only full duplex"
             ],
-            "Un canal half duplex sau full duplex poate fi folosit pentru un protocol Stop and Wait. Protocolul Stop and Wait necesita ca receptorul sa confirme primirea fiecarui pachet trimis de emitator, prin urmare, emitatorul si receptorul nu trebuie sa trimita simultan."
+            // Explanation:
+            "A half duplex or full duplex channel can be used for a Stop and Wait protocol. This protocol requires the receiver to acknowledge the receipt of each packet sent by the sender, so the sender and receiver must not transmit simultaneously."
         ),
+        // Question 03
         new Question(
-            "Care din urmatoarele metode NU este corecta pentru a determina inceputul si finalul unui cadru la nivelul legatura de date?",
-            "Inserarea de caractere de control in interiorul corpului cadrului pentru a escapa caracterele.",
+            // Question's text:
+            "Which of the following methods is NOT correct for determining the start and end of a frame at the data link layer?",
+            // Correct answer:
+            "Inserting control characters inside the frame body to escape characters.",
+            // List of incorrect questions:
             [
-            "Caractere STX si ETX care incadreaza cadrul",
-            "Adaugarea in header a unui camp cu dimensiunea in bytes a cadrului"
+                "STX and ETX characters framing the frame",
+                "Adding a field in the header with the frame size in bytes"
             ],
-            "Caracterele STX si ETX sau adaugarea unui camp cu dimensiunea in bytes a cadrului sunt metode corecte pentru a determina inceputul si finalul unui cadru la nivelul legatura de date. Inserarea de caractere de control in interiorul corpului cadrului pentru a escapa caracterele nu este o metoda corecta, deoarece poate aparea o problema de ambiguitate atunci cand datele din corpul cadrului contin accidental aceleasi secvente de caractere ca cele folosite ca si caractere de control."
+            // Explanation:
+            "STX and ETX characters or adding a field with the frame size in bytes are correct methods to determine the start and end of a frame at the data link layer. Inserting control characters inside the frame body to escape characters is not a correct method, as there can be ambiguity if the data in the frame body accidentally contains the same sequences as the control characters."
         ),
+        // Question 04
         new Question(
-            "Ce se foloseste pentru a marca un pachet IPv4 care nu se poate fragmenta?",
-            "flag-ul DF",
+            // Question's text:
+            "What is used to mark an IPv4 packet that cannot be fragmented?",
+            // Correct answer:
+            "The DF flag",
+            // List of incorrect questions:
             [
-            "campul offset",
-            "flag-ul MF",
-            "toate pachetele IPv4 se pot fragmenta"
+                "The offset field",
+                "The MF flag",
+                "All IPv4 packets can be fragmented"
             ],
-            "Pentru a marca un pachet IPv4 care nu se poate fragmenta se foloseste flag-ul DF (Don't Fragment). Acesta este setat in header-ul pachetului si indica faptul ca pachetul nu poate fi fragmentat pe parcursul tranzitarii retelei. In cazul in care o retea intermediara nu poate trimite pachetul fara sa-l fragmenteze, acesta va fi eliminat si va fi trimis un mesaj ICMP (Internet Control Message Protocol) de tipul 'Destination Unreachable - Fragmentation Needed and Don't Fragment Bit Set'."
+            // Explanation:
+            "To mark an IPv4 packet that cannot be fragmented, the DF (Don't Fragment) flag is used. It is set in the packet header and indicates that the packet cannot be fragmented during transit. If an intermediate network cannot forward the packet without fragmenting it, the packet will be dropped, and an ICMP (Internet Control Message Protocol) message of type 'Destination Unreachable - Fragmentation Needed and Don't Fragment Bit Set' will be sent."
         ),
+        // Question 05
         new Question(
-            "Pentru ce nu poate fi folosit protocolul ICMP?",
+            // Question's text:
+            "What can't the ICMP protocol be used for?",
+            // Correct answer:
             "ARP",
-            ["traceroute", "aflare path MTU", "ping"],
-            "Protocolul ICMP (Internet Control Message Protocol) poate fi folosit pentru a efectua diverse operatiuni de diagnostice in retele, cum ar fi ping, traceroute sau aflare path MTU. Cu toate acestea, ICMP nu poate fi folosit pentru a rezolva adrese MAC in adrese IP, ceea ce inseamna ca nu poate fi folosit pentru ARP (Address Resolution Protocol). Pentru a rezolva adresele MAC, este nevoie de un protocol precum ARP sau NDP (Neighbor Discovery Protocol) pentru IPv6."
+            // List of incorrect questions:
+            ["traceroute", "path MTU discovery", "ping"],
+            // Explanation:
+            "The ICMP (Internet Control Message Protocol) can be used for various diagnostic tasks in networks, such as ping, traceroute, or path MTU discovery. However, ICMP cannot be used to resolve MAC addresses to IP addresses, which means it cannot be used for ARP (Address Resolution Protocol). To resolve MAC addresses, a protocol like ARP or NDP (Neighbor Discovery Protocol) for IPv6 is needed."
         ),
+        // Question 06
         new Question(
-            "Protocolul IP garanteaza primirea corecta a pachetelor la destinatie?",
-            "Nu",
-            ["Da"],
-            "Protocolul IP (Internet Protocol) nu garanteaza primirea corecta a pachetelor la destinatie. Acesta este un protocol de livrare nesigur, ceea ce inseamna ca nu exista garantii ca un pachet va ajunge la destinatie, sau ca va ajunge in ordinea corecta. In schimb, IP se bazeaza pe alte protocoale, cum ar fi TCP sau UDP, pentru a oferi servicii de transport sigure, cu control de flux si erori de transmisie."
+            // Question's text:
+            "Does the IP protocol guarantee the correct delivery of packets to the destination?",
+            // Correct answer:
+            "No",
+            // List of incorrect questions:
+            ["Yes"],
+            // Explanation:
+            "The IP (Internet Protocol) does not guarantee the correct delivery of packets to the destination. It is an unreliable delivery protocol, meaning there are no guarantees that a packet will reach its destination or that it will arrive in the correct order. Instead, IP relies on other protocols, such as TCP or UDP, to provide reliable transport services with flow and error control."
         ),
+        // Question 07
         new Question(
-            "Care din metodele de retransmisie pentru fereastra glisanta asigura faptul ca receiver-ul primeste cadrele corecte in ordine?",
+            // Question's text:
+            "Which of the retransmission methods for sliding window ensures that the receiver gets the correct frames in order?",
+            // Correct answer:
             "Go Back n",
-            ["Selective repeat", "Ambele variante"],
-            "Metoda de retransmisie Go Back n asigura faptul ca receiver-ul primeste cadrele corecte in ordine. Aceasta metoda presupune ca receptorul confirma primirea pachetelor printr-un mesaj ACK (Acknowledgement), iar daca un pachet este pierdut sau corupt, toate pachetele ulterioare sunt ignorate. In schimb, metoda Selective Repeat permite retransmiterea unor pachete individuale care s-au pierdut sau au fost corupte, fara a afecta celelalte pachete, insa aceasta metoda nu garanteaza faptul ca pachetele vor fi receptionate in ordine."
+            // List of incorrect questions:
+            ["Selective repeat", "Both options"],
+            // Explanation:
+            "The Go Back n retransmission method ensures that the receiver gets the correct frames in order. This method requires the receiver to acknowledge the received packets with an ACK (Acknowledgement), and if a packet is lost or corrupted, all subsequent packets are ignored. In contrast, the Selective Repeat method allows the retransmission of individual lost or corrupted packets without affecting the others, but it does not guarantee that the packets will be received in order."
         ),
+        // Question 08
         new Question(
-            "Ce se intampla in cadrul unui protocol cu fereastra glisanta cand sender-ul primeste un ACK pentru un cadru din fereastra sa?",
-            "Shifteaza fereastra si trimite urmatorul cadru doar daca este ACK pentru primul cadru din fereastra",
+            // Question's text:
+            "What happens in a sliding window protocol when the sender receives an ACK for a frame in its window?",
+            // Correct answer:
+            "It shifts the window and sends the next frame only if it is an ACK for the first frame in the window",
+            // List of incorrect questions:
             [
-            "Asteapta si restul cadrelor ACK",
-            "Shifteaza fereastra si trimite urmatorul cadru doar daca este ACK pentru ultimul cadru din fereastra",
-            "Shifteaza fereastra si trimite urmatoarele cadre"
+                "It waits for the rest of the ACKs",
+                "It shifts the window and sends the next frame only if it is an ACK for the last frame in the window",
+                "It shifts the window and sends the next frames"
             ],
-            "Intr-un protocol cu fereastra glisanta, sender-ul muta fereastra la dreapta si trimite urmatorul cadru numai daca primeste un ACK pentru primul cadru din fereastra."
+            // Explanation:
+            "In a sliding window protocol, the sender shifts the window to the right and sends the next frame only if it receives an ACK for the first frame in the window."
         ),
+        // Question 09
         new Question(
-            "Ce fel de adrese se folosesc pentru protocolul Ethernet?",
-            "adrese MAC",
-            ["nu se folosesc adrese", "adrese IP"],
-            "Protocolul Ethernet foloseste adrese MAC pentru a identifica dispozitivele in retea."
+            // Question's text:
+            "What type of addresses are used for the Ethernet protocol?",
+            // Correct answer:
+            "MAC addresses",
+            // List of incorrect questions:
+            ["No addresses are used", "IP addresses"],
+            // Explanation:
+            "The Ethernet protocol uses MAC addresses to identify devices on the network."
         ),
+        // Question 10
         new Question(
-            "Catre care next_hop se trimite un pachet daca sunt mai multe potriviri in tabela de rutare?",
-            "longest prefix match",
+            // Question's text:
+            "To which next_hop is a packet sent if there are multiple matches in the routing table?",
+            // Correct answer:
+            "Longest prefix match",
+            // List of incorrect questions:
             [
-            "shortest prefix match",
-            "first prefix match",
-            "no prefix match",
-            "all prefix match"
+                "Shortest prefix match",
+                "First prefix match",
+                "No prefix match",
+                "All prefix match"
             ],
-            "Cand exista mai multe potriviri in tabela de rutare pentru adresa de destinatie a unui pachet, se va folosi potrivirea cu cel mai lung prefix, cunoscuta si sub numele de longest prefix match."
+            // Explanation:
+            "When there are multiple matches in the routing table for the destination address of a packet, the longest prefix match, also known as the longest prefix match, is used."
         ),
+        // Question 11
         new Question(
-            "Care nivel al stivei de protocoale ISO OSI se ocupa de corectia erorilor si controlul fluxului pe un canal de comunicatie?",
-            "Nivelul legatura de date",
-            ["Nivelul aplicatie", "Nivelul fizic", "Nivelul retea"],
-            "Nivelul legatura de date (Layer 2) este responsabil pentru gestionarea transferului fiabil de date intre doua noduri adiacente pe o retea de comunicatii. Acest nivel se ocupa de corectarea erorilor si de controlul fluxului pe un canal de comunicare."
+            // Question's text:
+            "Which layer of the ISO OSI protocol stack is responsible for error correction and flow control on a communication channel?",
+            // Correct answer:
+            "Data link layer",
+            // List of incorrect questions:
+            ["Application layer", "Physical layer", "Network layer"],
+            // Explanation:
+            "The data link layer (Layer 2) is responsible for managing the reliable transfer of data between two adjacent nodes on a communication network. This layer handles error correction and flow control on a communication channel."
         ),
+        // Question 12
         new Question(
-            "Cum se realizeaza incapsularea pentru trimiterea unui pachet IPv4?",
-            "pachetul IPv4 este in payload-ul cadrului Ethernet",
+            // Question's text:
+            "How is encapsulation done for sending an IPv4 packet?",
+            // Correct answer:
+            "The IPv4 packet is in the payload of the Ethernet frame",
+            // List of incorrect questions:
             [
-                "cadrul Ethernet este in interiorul pachetului IPv4",
-                "Nu au nici o legatura",
-                "Trebuie folosit un cadru PPPoE"
+                "The Ethernet frame is inside the IPv4 packet",
+                "They are unrelated",
+                "A PPPoE frame must be used"
             ],
-            "Pentru a transmite un pachet IPv4 pe o retea Ethernet, acesta trebuie incapsulat intr-un cadrul Ethernet. In acest caz, pachetul IPv4 va fi pus in payload-ul cadrului Ethernet si se va adauga un antet Ethernet care va contine adresele MAC ale dispozitivelor sursa si destinatie."
+            // Explanation:
+            "To send an IPv4 packet over an Ethernet network, it must be encapsulated in an Ethernet frame. In this case, the IPv4 packet will be placed in the payload of the Ethernet frame, and an Ethernet header will be added containing the MAC addresses of the source and destination devices."
         ),
+        // Question 13
         new Question(
-            "Cum se aplica masca de retea pentru verificarea intr-o tabela de rutare?",
-            ["AND"],
+            // Question's text:
+            "How is the network mask applied for checking in a routing table?",
+            // Correct answer:
+            "AND",
+            // List of incorrect questions:
             ["SUM", "OR", "XOR"],
-            "Pentru a verifica daca o adresa IP se afla intr-o anumita retea, se aplica masca de retea la adresa IP utilizand operatia AND. Rezultatul va fi adresa de retea corespunzatoare adresei IP date, care va fi cautata in tabela de rutare."
+            // Explanation:
+            "To check if an IP address is in a particular network, the network mask is applied to the IP address using the AND operation. The result will be the network address corresponding to the given IP address, which will be looked up in the routing table."
         ),
+        // Question 14
         new Question(
-            "In ce fel de algoritm de dirijare poate aparea problema numararii la infinit?",
+            // Question's text:
+            "In what type of routing algorithm can the count-to-infinity problem occur?",
+            // Correct answer:
             "Distance vector",
-            [ "Link state", "Nu este posibil a numararea la infinit" ],
-            "Problema numararii la infinit poate aparea in algoritmul de dirijare Distance Vector. In aceasta situatie, doua sau mai multe rutere se trimit reciproc in circulatie informatii despre costul rutei, fara a ajunge la o solutie de dirijare."
+            // List of incorrect questions:
+            [ "Link state", "It is not possible to have a count-to-infinity" ],
+            // Explanation:
+            "The count-to-infinity problem can occur in the Distance Vector routing algorithm. In this situation, two or more routers repeatedly exchange information about the cost of a route without reaching a routing solution."
         ),
+        // Question 15
         new Question(
-            "Ce fel de zone pot exista in cadrul unui Autonomous system (AS)?",
-            "o zona backbone si mai multe zone stub",
+            // Question's text:
+            "What kind of areas can exist within an Autonomous System (AS)?",
+            // Correct answer:
+            "One backbone area and multiple stub areas",
+            // List of incorrect questions:
             [
-                "nu exista zone",
-                "toate zonele sunt la fel",
-                "o zona stub si mai multe zone backbone"
+                "There are no areas",
+                "All areas are the same",
+                "One stub area and multiple backbone areas"
             ],
-            "In cadrul unui Autonomous System (AS) poate exista o zona backbone si mai multe zone stub. Zona backbone este responsabila pentru dirijarea traficului intre zonele stub, iar zonele stub sunt conectate la zona backbone si nu dirijeaza traficul prin ele."
+            // Explanation:
+            "Within an Autonomous System (AS), there can be one backbone area and multiple stub areas. The backbone area is responsible for routing traffic between stub areas, and the stub areas are connected to the backbone area and do not route traffic through them."
         ),
+        // Question 16
         new Question(
-            "Ce se intampla in cazul unui protocol de tip Stop and wait daca se pierde un mesaj de la sender la receiver?",
-            "Sender-ul va retrimite ultimul mesaj dupa timeout",
+            // Question's text:
+            "What happens in a Stop and Wait protocol if a message from sender to receiver is lost?",
+            // Correct answer:
+            "The sender will resend the last message after a timeout",
+            // List of incorrect answers:
             [
-                "Se blocheaza si transmisia este intrerupta",
-                "Receiver-ul trimite un NACK daca nu primeste urmatorul cadru"
+                "It gets blocked and the transmission is interrupted",
+                "The receiver sends a NACK if it does not receive the next frame"
             ],
-            "In cazul unui protocol de tip Stop and Wait, daca un mesaj este pierdut, sender-ul va retrimite ultimul mesaj dupa ce a expirat timeout-ul."
+            // Explanation:
+            "In a Stop and Wait protocol, if a message is lost, the sender will resend the last message after the timeout has expired."
         ),
+        // Question 17
         new Question(
-            "La nivelul retea, cum se poate asigura faptul ca pachetele ajung la destinatie in aceeasi ordine in care au fost trimise?",
-            "Circuite virtuale",
-            [ "Nu se poate garanta ordinea pachetelor", "Datagrame" ],
-            "Circuitele virtuale asigura ca pachetele ajung la destinatie in aceeasi ordine in care au fost trimise, deoarece pachetele sunt transmise pe acelasi traseu fix, intr-o anumita ordine, si sunt numerotate in consecinta. "
-        ),
-        new Question(
-            "Cum este impartita o adresa IP in adresa de retea si adresa de host?",
-            "Prefixul este adresa de retea, sufixul este adresa pentru host",
+            // Question's text:
+            "At the network level, how can it be ensured that packets arrive at the destination in the same order they were sent?",
+            // Correct answer:
+            "Virtual circuits",
+            // List of incorrect answers:
             [
-                "Prefixul este adresa pentru host, sufixul este adresa de retea",
-                "Nu exista o impartire"
+                "Packet order cannot be guaranteed",
+                "Datagrams"
             ],
-            "Prefixul adresei IP identifica adresa de retea, in timp ce sufixul identifica adresa de gazda. Adresa de retea identifica o retea, in timp ce adresa de gazda identifica un dispozitiv specific din acea retea. "
+            // Explanation:
+            "Virtual circuits ensure that packets arrive at the destination in the same order they were sent because packets are transmitted on the same fixed route in a certain order and are numbered accordingly."
         ),
+        // Question 18
         new Question(
-            "Ce nu este posibil printr-un canal half-duplex?",
-            "Transfer de date in ambele sensuri simultan",
+            // Question's text:
+            "How is an IP address divided into a network address and a host address?",
+            // Correct answer:
+            "The prefix is the network address, and the suffix is the address for the host",
+            // List of incorrect answers:
             [
-                "Transfer de date in ambele sensuri",
-                "Orice fel de transfer de date",
-                "Corectia erorilor"
+                "The prefix is the address for the host, and the suffix is the network address",
+                "There is no division"
             ],
-            "Un canal half-duplex permite transferul de date in ambele sensuri, dar nu in acelasi timp, deoarece transmisia este alternativa. Din acest motiv, transferul de date in ambele sensuri simultan nu este posibil prin canalul half-duplex. "
+            // Explanation:
+            "The prefix of the IP address identifies the network address, while the suffix identifies the host address. The network address identifies a network, while the host address identifies a specific device within that network."
         ),
+        // Question 19
         new Question(
-            "Care din metodele de retransmisie pentru fereastra glisanta asigura faptul ca se trimite un minim de cadre duplicate?",
+            // Question's text:
+            "What is not possible through a half-duplex channel?",
+            // Correct answer:
+            "Simultaneous data transfer in both directions",
+            // List of incorrect answers:
+            [
+                "Data transfer in both directions",
+                "Any kind of data transfer",
+                "Error correction"
+            ],
+            // Explanation:
+            "A half-duplex channel allows data transfer in both directions, but not at the same time, since the transmission is alternated. For this reason, simultaneous data transfer in both directions is not possible through a half-duplex channel."
+        ),
+        // Question 20
+        new Question(
+            // Question's text:
+            "Which retransmission method for sliding window ensures that a minimum number of duplicate frames are sent?",
+            // Correct answer:
             "Selective repeat",
-            ["Ambele variante", "Go back n"],
-            "Selective repeat este o metoda de retransmisie pentru fereastra glisanta care asigura faptul ca se trimite un minim de cadre duplicate. Acest lucru este realizat prin faptul ca receptorul retine pachetele primite corect, iar expeditorul retransmite doar pachetele care nu au fost confirmate. "
-        ),
-        new Question(
-            "Cine fragmenteaza pachetele in cadrul protocolului IPv6?",
-            "Sursa datelor",
+            // List of incorrect answers:
             [
-                "Router-ul care trebuie sa transmita un pachet spre o retea cu MTU prea mic",
-                "Router-ul care trebuie sa transmita un pachet spre o retea cu MTU prea mare",
-                "Destinatia"
+                "Both options",
+                "Go back n"
             ],
-            "In protocolul IPv6, fragmentarea pachetelor este realizata de catre sursa datelor, nu de catre routere, atunci cand pachetul este prea mare pentru a fi transmis printr-un link cu MTU (Maximum Transmission Unit) mai mic decat dimensiunea pachetului."
+            // Explanation:
+            "Selective repeat is a sliding window retransmission method that ensures that a minimum number of duplicate frames are sent. This is achieved by the receiver holding the correctly received packets, and the sender retransmitting only the packets that have not been acknowledged."
         ),
+        // Question 21
         new Question(
-            "Care este valoarea bitului de paritate impara pentru sirul 1011101?",
+            // Question's text:
+            "Who fragments packets in the IPv6 protocol?",
+            // Correct answer:
+            "The data source",
+            // List of incorrect answers:
+            [
+                "The router that needs to send a packet to a network with a too small MTU",
+                "The router that needs to send a packet to a network with a too large MTU",
+                "The destination"
+            ],
+            // Explanation:
+            "In the IPv6 protocol, packet fragmentation is performed by the data source, not by routers, when the packet is too large to be transmitted through a link with an MTU (Maximum Transmission Unit) smaller than the packet size."
+        ),
+        // Question 22
+        new Question(
+            // Question's text:
+            "What is the value of the odd parity bit for the string 1011101?",
+            // Correct answer:
             "0",
-            ["1"],
-            "Pentru a calcula bitul de paritate impara, se numara numarul de biti cu valoarea 1 din sirul de biti, apoi se adauga un bit cu valoarea 0 sau 1 astfel incat numarul total de biti cu valoarea 1 sa fie impar. In cazul acestui sir de biti, exista 4 biti cu valoarea 1, deci bitul de paritate impara trebuie sa fie 0, astfel incat numarul total de biti cu valoarea 1 sa fie impar (5)."
+            // List of incorrect answers:
+            [
+                "1"
+            ],
+            // Explanation:
+            "To calculate the odd parity bit, count the number of bits with a value of 1 in the bit string, then add a bit with the value of 0 or 1 so that the total number of bits with a value of 1 is odd. In this case, there are 4 bits with a value of 1, so the odd parity bit must be 0, ensuring that the total number of bits with a value of 1 is odd (5)."
         ),
+        // Question 23
         new Question(
-            "Daca la nivelul legaturii de date se realizeaza transmisia transparenta prin caractere de control, ce se trimite daca in campul de date apare caracterul DLE?",
+            // Question's text:
+            "If transparent transmission is performed at the data link layer using control characters, what is sent if the DLE character appears in the data field?",
+            // Correct answer:
             "DLE DLE",
-            ["ETX", "DLE", "Nu se poate trimite"],
-            "In transmisia transparenta prin caractere de control, anumite caractere (cum ar fi caracterul DLE - Data Link Escape) sunt considerate speciale si pot fi confundate cu caractere de control. Pentru a evita acest lucru, se foloseste o tehnica numita 'byte stuffing', prin care caracterul special este inlocuit cu o secventa de caractere care nu poate fi confundata cu caractere de control. In cazul caracterului DLE, se trimite secventa DLE DLE in locul acestuia."
-        ),
-        new Question(
-            "De ce este necesara fragmentarea pachetelor IP?",
-            "Dimensiunea pachetului este mai mare decat MTU",
+            // List of incorrect answers:
             [
-                "Dimensiunea pachetului este mai egala cu MTU",
-                "Dimensiunea pachetului este mai mic decat MTU"
+                "ETX",
+                "DLE",
+                "Cannot be sent"
             ],
-            "Fragmentarea pachetelor IP este necesara atunci cand dimensiunea pachetului este mai mare decat MTU-ul (Maximum Transmission Unit) al unei retele intermediare prin care trebuie sa treaca pachetul, astfel incat pachetul trebuie fragmentat in bucati mai mici care pot fi transmise prin intermediul retelei respective."
+            // Explanation:
+            "In transparent transmission using control characters, certain characters (such as the DLE character - Data Link Escape) are considered special and may be confused with control characters. To avoid this, a technique called 'byte stuffing' is used, where the special character is replaced with a character sequence that cannot be confused with control characters. In the case of the DLE character, the sequence DLE DLE is sent instead."
         ),
+        // Question 24
         new Question(
-            "In cadrul CIDR, ce semnificatie are notatia de forma 141.85.99.142/24 ?",
-            "Adresa retelei are 24 biti si adresa host-ului are 8 biti",
+            // Question's text:
+            "Why is IP packet fragmentation necessary?",
+            // Correct answer:
+            "The packet size is greater than the MTU",
+            // List of incorrect answers:
             [
-                "Adresa este locala",
-                "Adresa retelei are 8 biti si adresa host-ului are 24 biti",
-                "/24 marcheaza numarul total de biti ai adresei IP."
+                "The packet size is equal to the MTU",
+                "The packet size is less than the MTU"
             ],
-            "In notarea CIDR, numarul de biti din adresa de retea este specificat prin /24, ceea ce inseamna ca primii 24 de biti ale adresei IP reprezinta adresa de retea, iar ultimii 8 biti reprezinta adresa host-ului."
+            // Explanation:
+            "IP packet fragmentation is necessary when the packet size is greater than the MTU (Maximum Transmission Unit) of an intermediate network through which the packet must pass, so the packet must be fragmented into smaller pieces that can be transmitted through that network."
         ),
+        // Question 25
         new Question(
-            "Cine fragmenteaza pachetele in cadrul protocolului IPv4?",
-            "Router-ul care trebuie sa transmita un pachet spre o retea cu MTU prea mic",
+            // Question's text:
+            "In CIDR, what does the notation of the form 141.85.99.142/24 signify?",
+            // Correct answer:
+            "The network address has 24 bits and the host address has 8 bits",
+            // List of incorrect answers:
             [
-                "Sursa datelor",
-                "Router-ul care trebuie sa transmita un pachet spre o retea cu MTU prea mare",
-                "Destinatia"
+                "The address is local",
+                "The network address has 8 bits and the host address has 24 bits",
+                "/24 marks the total number of bits in the IP address."
             ],
-            "In cadrul protocolului IPv4, pachetele sunt fragmentate de router-ul care trebuie sa transmita un pachet spre o retea cu MTU prea mic pentru dimensiunea pachetului IP respectiv. Astfel, router-ul va fragmenta pachetul in bucati mai mici care sa poata fi transmise prin reteaua respectiva."
+            // Explanation:
+            "In CIDR notation, the number of bits in the network address is specified by /24, meaning the first 24 bits of the IP address represent the network address, while the last 8 bits represent the host address."
         ),
+        // Question 26
         new Question(
-            "Cum este marcat ultimul fragment dintr-un pachet?",
-            "Flag-ul MF are valoarea 0",
+            // Question's text:
+            "Who fragments packets in the IPv4 protocol?",
+            // Correct answer:
+            "The router that needs to send a packet to a network with a MTU that is too small",
+            // List of incorrect answers:
             [
-                "Flag-ul MF are valoarea 1",
-                "Flag-ul DF are valoarea 1",
-                "Offset-ul are valoarea 0"
+                "The data source",
+                "The router that needs to send a packet to a network with a MTU that is too large",
+                "The destination"
             ],
-            "Ultimul fragment dintr-un pachet este marcat prin faptul ca flag-ul MF (More Fragments) are valoarea 0, indicand ca nu mai sunt fragmente ulterioare."
+            // Explanation:
+            "In the IPv4 protocol, packets are fragmented by the router that needs to send a packet to a network with a MTU that is too small for the size of the IP packet. Thus, the router will fragment the packet into smaller pieces that can be transmitted through that network."
         ),
+        // Question 27
         new Question(
-            "Ce reprezinta campul offset dintr-un fragment IP?",
-            "Pozitia fragmentului in pachet ca grup de 8 bytes",
+            // Question's text:
+            "How is the last fragment of a packet marked?",
+            // Correct answer:
+            "The MF flag has a value of 0",
+            // List of incorrect answers:
             [
-                "Pozitia fragmentului in pachet (numarul de bytes)",
-                "Nu are legatura cu fragmentarea",
-                "Pozitia fragmentului in pachet ca grup de 16 bytes"
+                "The MF flag has a value of 1",
+                "The DF flag has a value of 1",
+                "The offset has a value of 0"
             ],
-            "Campul offset dintr-un fragment IP indica pozitia fragmentului in pachetul original, exprimata ca un numar de grupuri de 8 octeti (64 de biti)."
+            // Explanation:
+            "The last fragment of a packet is marked by the fact that the MF (More Fragments) flag has a value of 0, indicating that there are no more subsequent fragments."
         ),
+        // Question 28
         new Question(
-            "In cadrul unui protocol cu fereastra glisanta, ce rol are cadrul de tip RR?",
+            // Question's text:
+            "What does the offset field in an IP fragment represent?",
+            // Correct answer:
+            "The position of the fragment in the packet as a group of 8 bytes",
+            // List of incorrect answers:
+            [
+                "The position of the fragment in the packet (number of bytes)",
+                "It has nothing to do with fragmentation",
+                "The position of the fragment in the packet as a group of 16 bytes"
+            ],
+            // Explanation:
+            "The offset field in an IP fragment indicates the position of the fragment in the original packet, expressed as a number of groups of 8 octets (64 bits)."
+        ),
+        // Question 29
+        new Question(
+            // Question's text:
+            "In a sliding window protocol, what is the role of the RR frame?",
+            // Correct answer:
             "Receive Ready",
+            // List of incorrect answers:
             [
                 "Rank Reset",
                 "Response Resent",
                 "Reply Rejected",
                 "Reverse Run"
             ],
-            "Cadrul de tip RR (Receive Ready) este folosit intr-un protocol cu fereastra glisanta pentru a confirma primirea cu succes a unui anumit numar de pachete. Acesta poate fi trimis de catre receptor catre emitator pentru a indica ca poate primi mai multe pachete."
+            // Explanation:
+            "The RR (Receive Ready) frame is used in a sliding window protocol to confirm the successful receipt of a certain number of packets. It can be sent by the receiver to the sender to indicate that it can receive more packets."
         ),
+        // Question 30
         new Question(
-            "Daca la nivelul legatura de date se realizeaza transmisia transparenta prin caractere de control, care este caracterul folosit pentru escapare?",
+            // Question's text:
+            "If data link layer performs transparent transmission through control characters, what is the character used for escape?",
+            // Correct answer:
             "DLE",
+            // List of incorrect answers:
             ["ETX", "STX", "IDK"],
-            "DLE este caracterul folosit pentru escapare la nivelul legaturii de date in cazul transmisiei transparente prin caractere de control."
+            // Explanation:
+            "DLE is the character used for escape at the data link layer in case of transparent transmission through control characters."
         ),
+        // Question 31
         new Question(
-            "Care nivel al stivei de protocoale ISO OSI se ocupa de determinarea rutei de la sursa la destinatie prin noduri intermediare?",
-            "Nivelul retea",
+            // Question's text:
+            "Which layer of the ISO OSI protocol stack is responsible for determining the route from source to destination through intermediate nodes?",
+            // Correct answer:
+            "Network layer",
+            // List of incorrect answers:
             [
-                "Nivelul fizic",
-                "Nivelul legatura de date",
-                "Nivelul aplicatie"
+                "Physical layer",
+                "Data link layer",
+                "Application layer"
             ],
-            "Nivelul retea este cel care se ocupa de determinarea rutei de la sursa la destinatie prin intermediul nodurilor, prin utilizarea de protocoale de rutare si adresare."
+            // Explanation:
+            "The network layer is responsible for determining the route from source to destination through nodes, using routing and addressing protocols."
         ),
+        // Question 32
         new Question(
-            "Pe ce se bazeaza protocolul RIP?",
+            // Question's text:
+            "What does the RIP protocol rely on?",
+            // Correct answer:
             "Distance vector",
-            ["Link state", "Nici una din cele mentionate"],
+            // List of incorrect answers:
+            ["Link state", "None of the mentioned"],
+            // Explanation:
             "Check this link: https://www.geeksforgeeks.org/routing-information-protocol-rip/"
         ),
+        // Question 33
         new Question(
-            "Cum se foloseste protocolul ICMP pentru a afla Path MTU?",
-            "Se trimit pachete ICMP din ce in ce mai mici pana cand nu se mai primeste o eroare",
+            // Question's text:
+            "How is the ICMP protocol used to find Path MTU?",
+            // Correct answer:
+            "ICMP packets are sent smaller and smaller until no error is received",
+            // List of incorrect answers:
             [
-                "Se trimit pachete ICMP din ce in ce mai mari pana cand se primeste o eroare",
-                "Path MTU nu are nici o legatura cu protocolul ICMP"
+                "ICMP packets are sent larger and larger until an error is received",
+                "Path MTU has nothing to do with the ICMP protocol"
             ],
-            "Pentru a afla Path MTU, se trimit pachete ICMP cu flag-ul 'Don't Fragment' setat si cu o dimensiune tot mai mare. In cazul in care unul dintre pachete nu poate fi transmis din cauza dimensiunii prea mari, reteaua va returna un mesaj ICMP 'Fragmentation Needed and Don't Fragment was Set'. Acest mesaj va indica dimensiunea maxima a pachetelor care pot fi transmise pe acea ruta."
+            // Explanation:
+            "To find the Path MTU, ICMP packets are sent with the 'Don't Fragment' flag set and increasing size. If one of the packets cannot be transmitted due to being too large, the network will return an ICMP message 'Fragmentation Needed and Don't Fragment was Set'. This message will indicate the maximum size of packets that can be transmitted on that route."
         ),
+        // Question 34
         new Question(
-            "Un protocol Stop and Wait are nevoie neaparat de un canal de transmisie Full Duplex?",
-            "Nu. Este suficient un canal Half Duplex",
-            ["Da", "Nu. Este suficient un canal Simplex"],
+            // Question's text:
+            "Does a Stop and Wait protocol necessarily require a Full Duplex transmission channel?",
+            // Correct answer:
+            "No. A Half Duplex channel is sufficient",
+            // List of incorrect answers:
+            ["Yes", "No. A Simplex channel is sufficient"],
+            // No explanation
             ""
         ),
+        // Question 35
         new Question(
-            "Daca folosim un nr de secventa pe 4 biti, care este dimensiunea maxima a unei ferestre glisante pentru un transmitator?",
+            // Question's text:
+            "If we use a sequence number of 4 bits, what is the maximum size of a sliding window for a transmitter?",
+            // Correct answer:
             "15",
+            // List of incorrect answers:
             ["12", "16", "8"],
-            "https://gateoverflow.in/111757/calculate-the-maximum-window-size"
+            // Explanation:
+            "See this link: https://gateoverflow.in/111757/calculate-the-maximum-window-size"
         ),
+        // Question 36
         new Question(
-            "La nivelul legatura de date, pentru un protocol cu fereastra glisanta, cand se shifteaza fereastra transmitatorului?",
-            "Cand a primit ACK pentru primul cadru din fereastra de transmisie",
+            // Question's text:
+            "At the data link layer, for a sliding window protocol, when does the transmitter shift its window?",
+            // Correct answer:
+            "When it has received an ACK for the first frame in the transmission window",
+            // List of incorrect answers:
             [
-                "Dupa ce a terminat de trimis cadrele din fereastra",
-                "Cand a primit ACK pentru oricare cadru din fereastra de transmisie"
+                "After it has finished sending the frames in the window",
+                "When it has received an ACK for any frame in the transmission window"
             ],
-            "Intr-un protocol cu fereastra glisanta, transmiterea datelor se face prin transmiterea unui numar fix de cadre (fereastra de transmisie) inainte de asteptarea confirmarii primirii acestora de catre receptor. Dupa ce primul cadru din fereastra de transmisie este trimis, transmitatorul asteapta sa primeasca un ACK (acuzatie de primire) pentru acest cadru inainte de a deplasa fereastra de transmisie catre urmatoarele cadre. In acest fel, transmitatorul poate asigura ca receptorul a primit primul cadru si poate accepta noile cadre din fereastra de transmisie pentru transmitere. Dupa primirea ACK-ului pentru primul cadru, fereastra de transmisie se deplaseaza cu un cadru si procesul se repeta pana cand toate cadrele din fereastra de transmisie au fost trimise si confirmate de receptor."
+            // Explanation:
+            "In a sliding window protocol, data transmission is done by sending a fixed number of frames (the transmission window) before waiting for an acknowledgment of their receipt from the receiver. After the first frame in the transmission window is sent, the transmitter waits to receive an ACK (acknowledgment) for this frame before moving the transmission window to the next frames. This way, the transmitter can ensure that the receiver has received the first frame and can accept new frames from the transmission window for transmission. After receiving the ACK for the first frame, the transmission window shifts by one frame, and the process repeats until all frames in the transmission window have been sent and acknowledged by the receiver."
         ),
+        // Question 37
         new Question(
-            "Cand se reasambleaza fragmentele unui pachet IP?",
-            "La destinatia finala",
+            // Question's text:
+            "When are the fragments of an IP packet reassembled?",
+            // Correct answer:
+            "At the final destination",
+            // List of incorrect answers:
             [
-                "La intrarea in prima retea cu un MTU suficient de mare",
-                "Dupa traversarea unui numar fix de retele"
+                "When entering the first network with a sufficiently large MTU",
+                "After crossing a fixed number of networks"
             ],
+            // No explanation
             ""
         ),
+        // Question 38
         new Question(
-            "Ce garanteaza transmisia datelor folosind datagrame?",
-            "Nici una din aceste variante",
+            // Question's text:
+            "What does data transmission using datagrams guarantee?",
+            // Correct answer:
+            "None of these options",
+            // List of incorrect answers:
             [
-                "Ordinea pachetelor ajunse la destinatie este aceeasi ordine in care au fost transmise",
-                "Canal de comunicatie prin care datele sigur ajung la destinatie",
-                "Corectitudinea datelor trimise"
+                "The order of packets arriving at the destination is the same order in which they were transmitted",
+                "A communication channel through which data safely reaches its destination",
+                "The correctness of the sent data"
             ],
+            // No explanation
             ""
         ),
+        // Question 39
         new Question(
-            "Intre metodele de retransmisie 'Go back N' si 'Selective repeat' care are nevoie sa pastreze intr-un buffer cadrele primite corect la receptor, pana se primesc si cadrele retransmise.",
+            // Question's text:
+            "Between the retransmission methods 'Go back N' and 'Selective repeat', which one needs to keep correctly received frames in a buffer at the receiver until the retransmitted frames are received?",
+            // Correct answer:
             ["Selective repeat"],
-            ["Nici unul", "Amandoua", "Go back N"],
+            // List of incorrect answers:
+            ["None", "Both", "Go back N"],
+            // No explanation
             ""
         ),
+        // Question 40
         new Question(
-            "Cum influenteaza fragmentarea pachetelor daca este setat flagul DF din header-ul IPv4?",
-            "Pachetul nu se va fragmenta niciodata",
+            // Question's text:
+            "How does packet fragmentation affect if the DF flag is set in the IPv4 header?",
+            // Correct answer:
+            "The packet will never be fragmented",
+            // List of incorrect answers:
             [
-                "Pachetul trebuie neaparat sa fie fragmentat",
-                "Nu are legatura cu fragmentarea"
+                "The packet must be fragmented",
+                "It has nothing to do with fragmentation"
             ],
+            // No explanation
             ""
         ),
+        // Question 41
         new Question(
-            "Ce se intampla la protocolul Ethernet daca 2 host-uri incearca sa trimita in acelasi timp?",
-            "Are loc o coliziune si host-urile vor incerca sa retrimita dupa un timp",
+            // Question's text:
+            "What happens in the Ethernet protocol if two hosts try to send at the same time?",
+            // Correct answer:
+            "A collision occurs and the hosts will attempt to retransmit after some time",
+            // List of incorrect answers:
             [
-                "Datele ajung corect la destinatie.",
-                "Se trimite un NACK pentru unul din transmitatori."
+                "Data arrives correctly at the destination.",
+                "A NACK is sent for one of the transmitters."
             ],
+            // No explanation
             ""
         ),
+        // Question 42
         new Question(
-            "La nivelul legatura de date, daca vrem sa trimitem un payload de 16 biti, de cati biti de control avem nevoie pentru metoda Hamming?",
+            // Question's text:
+            "At the data link layer, if we want to send a 16-bit payload, how many control bits do we need for the Hamming method?",
+            // Correct answer:
             "5",
+            // List of incorrect answers:
             ["3", "4", "6"],
-            "Pentru a utiliza metoda Hamming pentru a trimite un payload de 16 biti, avem nevoie de 5 biti de control. Aceasta se datoreaza faptului ca metoda Hamming utilizeaza o matrice de control cu 5 linii si 16 coloane pentru a verifica si a corecta erorile de transmisie. Deci, raspunsul corect este 5."
+            // Explanation:
+            "To use the Hamming method to send a 16-bit payload, we need 5 control bits. This is because the Hamming method uses a control matrix with 5 rows and 16 columns to check and correct transmission errors. So, the correct answer is 5."
         ),
+        // Question 43
         new Question(
-            "Prin folosirea unui checksum este posibila:",
-            "Detectia erorilor de transmisie",
+            // Question's text:
+            "By using a checksum, it is possible to:",
+            // Correct answer:
+            "Detect transmission errors",
+            // List of incorrect answers:
             [
-                "Fixarea lungimii maxime a unui cadru.",
-                "Detectia si corectarea erorilor de transmisie"
+                "Set the maximum length of a frame.",
+                "Detect and correct transmission errors"
             ],
-            "Checksum este o metoda utilizata pentru detectarea erorilor de transmisie in cadrul unui set de date. Se calculeaza o suma de control (checksum) pentru datele transmise si se compara cu o suma de control primita de la receptor. Daca cele doua sunt diferite, se poate presupune ca au aparut erori de transmisie in datele transmise. Nu este posibila detectarea si corectarea erorilor de transmisie utilizand doar checksum. Pentru a corecta erorile de transmisie, este necesara utilizarea altor metode, cum ar fi codurile de corectie a erorilor. De asemenea, checksum nu fixeaza lungimea maxima a unui cadru."
+            // Explanation:
+            "A checksum is a method used for detecting transmission errors within a set of data. A checksum is calculated for the transmitted data and compared with a checksum received from the receiver. If the two are different, it can be assumed that transmission errors have occurred in the transmitted data. It is not possible to detect and correct transmission errors using only a checksum. To correct transmission errors, other methods such as error correction codes are required. Additionally, a checksum does not set the maximum length of a frame."
         )
+
     ]
 
+}
+
+
+async function main() {
+    // Removing all existing text from the terminal window
+    console.clear();
+
+
+
    
-	intro(`${color.bgMagenta(color.black(" Welcome! Let's test your knowledge about Network Protocols! "))}`);
+   
+	intro(`${color.bgYellowBright(color.black(" Welcome! Let's test your knowledge about Network Protocols! "))}`);
 
     const spin = spinner(); 
     
@@ -412,10 +651,19 @@ async function main() {
     await sleep(5 * one_second_of_sleep);
     spin.stop();
 
+    
+    const QAs = generateQuestions();
+
+
+    let statistics = {
+        question_idx: 0,
+        count_correct_questions: 0,
+        count_inocrrect_questions: 0
+    }
 
     for (const question of QAs) {
         // 'await' make the function in the same order they are written in code
-        await askQuestion(question);
+        await askQuestion(question, statistics);
     }
 }
 
