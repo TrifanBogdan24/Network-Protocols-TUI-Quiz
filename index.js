@@ -86,20 +86,8 @@ async function askQuestion(question, numQuestions, statistics) {
         spin.start('Next ');
         // 'await' makes the functions run in the same order they are written in code
         await sleep(3 * oneSecondOfSleep);
-
-        if (isCancel(spin)) {
-            note(
-                `Process was interrupted.\n` + 
-                `Number of completed questions: ${statistics.question_idx}\n` +
-                `Number of correct questions: ${statistics.count_correct_questions}`
-            );
-            process.exit(0);
-        }
-        
         spin.stop('Next');
     }
-    
-
 }
 
 
