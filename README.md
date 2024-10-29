@@ -77,3 +77,122 @@ alias TUI_quiz="docker run --rm -it bgd24/network-protocols-interactive-tui-quiz
 $ TUI_quiz
 ```
 
+
+## `Clack` API
+---
+
+
+```js
+import { intro, isCancel, cancel, note, outro, select, spinner, text } from '@clack/prompts';
+```
+
+
+### `Clack` API | Intro
+---
+
+
+Code:
+```js
+intro(`${color.bgYellowBright(color.black(" Welcome! Let's test your knowledge about Network Protocols! "))}`);
+```
+
+Result:
+![img](Images/ClackPreview/clack_intro.png)
+
+
+### `Clack` API | Outro
+---
+
+Code:
+```js
+if (grade < 5) {
+  outro(`${color.bgRed(color.black(`${final_message}`))}`);
+} else {
+  outro(`${color.bgGreen(color.black(`${final_message}`))}`);
+}
+```
+
+Result:
+![img](Images/ClackPreview/clack_outro_passed.png)
+![img](Images/ClackPreview/clack_outro_failed.png)
+
+
+
+### `Clack` API | Spinner
+---
+
+
+Also use the `time` to keep the **spinners** running.
+
+
+Code:
+```js
+import { setTimeout as sleep } from 'node:timers/promises';
+
+const oneSecondOfSleep = 1000;
+
+const spin = spinner();
+
+// First spinner
+spin.start('Generating Q&As for you ');
+await sleep(3 * oneSecondOfSleep);
+spin.stop('Generating Q&As for you');
+
+// Second spinner
+spin.start('Shuffling your Q&As ');
+await sleep(3 * oneSecondOfSleep);
+spin.stop('Shuffling your Q&As');
+```
+
+Result:
+![img](Images/ClackPreview/clack_spinners.png)
+
+
+
+
+
+### `Clack` API | Select (choose one value from a list)
+---
+
+
+Code:
+```js
+const userAnswear = await select({
+    message: `${statistics.question_idx}) ${question.questionText}`,
+    options: shuffledAnswears.map(answer => ({ value: answer }))
+});
+```
+
+Result:
+![img](Images/ClackPreview/clack_selection.png)
+![img](Images/ClackPreview/clack_after_selection.png)
+
+
+### `Clack` API | Note
+---
+
+
+Code:
+```js
+note(`${color.red('Incorrect!')}\n\nFEEDBACK:\n${question.feedback}`);
+```
+
+Result:
+![img](Images/ClackPreview/clack_note.png)
+
+
+
+### `Clack` API | isCancel
+---
+
+
+Code:
+```js
+if (isCancel(....)) {
+  cancel('Process was interrupted!');
+  process.exit(0);
+}
+```
+
+Result:
+![img](Images/ClackPreview/clack_cancel.png)
