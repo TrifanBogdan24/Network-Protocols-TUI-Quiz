@@ -113,6 +113,7 @@ if (grade < 5) {
 ```
 
 Result:
+
 ![img](Images/ClackPreview/clack_outro_passed.png)
 ![img](Images/ClackPreview/clack_outro_failed.png)
 
@@ -145,6 +146,7 @@ spin.stop('Shuffling your Q&As');
 ```
 
 Result:
+
 ![img](Images/ClackPreview/clack_spinners.png)
 
 
@@ -164,6 +166,7 @@ const userAnswear = await select({
 ```
 
 Result:
+
 ![img](Images/ClackPreview/clack_selection.png)
 ![img](Images/ClackPreview/clack_after_selection.png)
 
@@ -178,6 +181,7 @@ note(`${color.red('Incorrect!')}\n\nFEEDBACK:\n${question.feedback}`);
 ```
 
 Result:
+
 ![img](Images/ClackPreview/clack_note.png)
 
 
@@ -195,4 +199,5 @@ if (isCancel(....)) {
 ```
 
 Result:
+
 ![img](Images/ClackPreview/clack_cancel.png)
