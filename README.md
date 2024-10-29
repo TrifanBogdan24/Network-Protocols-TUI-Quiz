@@ -6,7 +6,18 @@
 
 ## Preview/Results
 
-![gif](Images/preview.gif)
+![gif](Images/PreviewVideos/preview.gif)
+
+
+`@clack/prompts` elements:
+![img](Images/PreviewImages/img-01.png)
+![img](Images/PreviewImages/img-02.png)
+![img](Images/PreviewImages/img-03.png)
+![img](Images/PreviewImages/img-04.png)
+![img](Images/PreviewImages/img-05.png)
+![img](Images/PreviewImages/img-06.png)
+![img](Images/PreviewImages/img-07.png)
+
 
 ## About the Quiz
 
